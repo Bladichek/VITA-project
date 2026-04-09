@@ -29,12 +29,26 @@ def set_current_team():
         teams.append(team)
         print(f'{n}. {team.title}')
         n+=1
-    t = int(input('Введите номер команды: '))
     try:
+        t = int(input('Введите номер команды: '))
         return {'succes': True, 'result': teams[t-1]}
     except:
         print('Введён неверный номер')
         return {'succes': False}
+
+def set_cuurent_factory(current_team):
+    if current_team==None:
+        print('Нет команд')
+        return {'succes': False}
+    factories=[]
+    n=1
+    print('Выберите фабрику:')
+    for factory in current_team.factories:
+        factories.append(factory)
+        print(f'{n}. {factory.title}')
+    f=int(input())
+
+
 
 
 
