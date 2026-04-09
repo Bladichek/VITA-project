@@ -347,61 +347,61 @@ class Node():
 
 
 
-world=World()
-team1=Team()
-
-world.add_team(team1)
-
-factory=Factory(team=team1)
-
-build1=Build()
-build1.title='build1'
-build1.max_connections_out=1
-build1.default_energy_profit=-10
-
-build2=Build()
-build2.title='build2'
-build2.max_connections_in=1
-build2.max_connections_out=1
-build2.default_energy_profit=50
-
-build3=Build()
-build3.title='build3'
-build3.max_connections_in=1
-build3.max_connections_out=1
-build3.default_energy_profit=-10
-
-build4=Build()
-build4.title='build4'
-build4.max_connections_in=1
-build4.default_energy_profit=-30
-
-factory.build(build1)
-factory.build(build2)
-factory.build(build3)
-factory.build(build4)
-
-
-c1=Connection()
-c2=Connection()
-c3=Connection()
-
-build1.add_connection_out(c1)
-build2.add_connection_in(c1)
-
-build2.add_connection_out(c2)
-build3.add_connection_in(c2)
-
-build3.add_connection_out(c3)
-build4.add_connection_in(c3)
-
-build1.set_recipy(1)
-build2.set_recipy(2)
-build3.set_recipy(3)
-build4.set_recipy(4)
-
-print(c3.res)
-print(team1.energy)
+# world=World()
+# team1=Team()
+#
+# world.add_team(team1)
+#
+# factory=Factory(team=team1)
+#
+# build1=Build()
+# build1.title='build1'
+# build1.max_connections_out=1
+# build1.default_energy_profit=-10
+#
+# build2=Build()
+# build2.title='build2'
+# build2.max_connections_in=1
+# build2.max_connections_out=1
+# build2.default_energy_profit=50
+#
+# build3=Build()
+# build3.title='build3'
+# build3.max_connections_in=1
+# build3.max_connections_out=1
+# build3.default_energy_profit=-10
+#
+# build4=Build()
+# build4.title='build4'
+# build4.max_connections_in=1
+# build4.default_energy_profit=-30
+#
+# factory.build(build1)
+# factory.build(build2)
+# factory.build(build3)
+# factory.build(build4)
+#
+#
+# c1=Connection()
+# c2=Connection()
+# c3=Connection()
+#
+# build1.add_connection_out(c1)
+# build2.add_connection_in(c1)
+#
+# build2.add_connection_out(c2)
+# build3.add_connection_in(c2)
+#
+# build3.add_connection_out(c3)
+# build4.add_connection_in(c3)
+#
+# build1.set_recipy(1)
+# build2.set_recipy(2)
+# build3.set_recipy(3)
+# build4.set_recipy(4)
+#
+# print(c3.res)
+# print(team1.energy)
 
 
 
