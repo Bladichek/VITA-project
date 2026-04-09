@@ -11,6 +11,9 @@ def add_team(title):
         return {'succes': False}
 
 def add_factory(title, current_team):
+    if current_team==None:
+        print('Нет команд')
+        return {'succes': False}
     try:
         factory=Factory(title=title)
         current_team.factories.append(factory)
@@ -45,4 +48,5 @@ def parse_commands(text):
     return (command, args)
 
 def main():
+    current_team=None
     pass
