@@ -54,6 +54,36 @@ def set_current_factory(current_team):
         return {'success': False, 'error': e}
 
 
+def remove_team():
+    print('Выберите команду для удаления из списка:')
+    n=1
+    for team in world.teams:
+        print(f'{n}. {team.title}')
+        n+=1
+    try:
+        t=int(input('Введите номер команды: '))
+        if world.teams[t-1].factories != []:
+            raise Exception('Нельзя удалить команду, пока у неё имеются фабрики!')
+        world.teams.pop(t-1)
+        return {'success': True}
+    except Exception as e:
+        return {'success': False, 'error': e}
+
+
+
+def remove_factory(current_team):#дописать функцию (думаю над тем, чтобы изменить систему - все принты внутри функций, кроме ошибок)
+    print('Выберите фабрику для удаления из списка:')
+    n=1
+    for factory in current_team.factories:
+        print(f'{n}. {factory.title}')
+        n+=1
+    try:
+        f=int(input())
+        if current_team.factories.builds != []:
+            ans=input('У фабрики есть постройки, которые будут безвозвратно удалены. Вы уверены? (Y/n)')
+            if ans.lower()=='n':
+                return
+
 
 
 
@@ -113,6 +143,13 @@ def main():
 
             elif command=='/exit':
                 break
+
+            elif command=='/remove_team':
+                res=remove_team()
+                if res['success']:
+                    print('Команда успешно удалена!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
 
             elif command=='/test':
                 print(world.teams[0].factories)

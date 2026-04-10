@@ -330,7 +330,7 @@ class Node():
         self.default_energy_profit = 0
         self.current_energy_profit = 0
         self.is_energy_connected = True
-        self.factory = factory
+        self.factory = None
         self.out = {'output1': {}, 'output2': {}}
 
     def update_res(self):
