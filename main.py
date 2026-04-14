@@ -6,6 +6,7 @@ def add_team(title):
     try:
         team=Team(title=title)
         world.add_team(team)
+        print('Команда успешно добавлена!')
         return {'success': True}
     except Exception as e:
         return {'success': False, 'error': e}
@@ -13,9 +14,10 @@ def add_team(title):
 def add_factory(title, current_team):
     if current_team==None:
         print('Нет команд')
-        return {'success': False}
+        return {'success': False, 'error': 'Нет команд!'}
     try:
         factory=Factory(title=title,  team=current_team)
+        print('Фабрика успешно добавлена!')
         return {'success': True}
     except Exception as e:
         return {'success': False, 'error': e}
@@ -30,7 +32,9 @@ def set_current_team():
         n+=1
     try:
         t = int(input('Введите номер команды: '))
-        return {'success': True, 'result': teams[t-1]}
+        tm=teams[t-1]
+        print('Команда успешно выбрана!')
+        return {'success': True, 'result': tm}
     except Exception as e:
         print('Введён неверный номер')
         return {'success': False, 'error': e}
@@ -38,7 +42,7 @@ def set_current_team():
 def set_current_factory(current_team):
     if current_team==None:
         print('Нет команд')
-        return {'success': False}
+        return {'success': False, 'error': 'Нет команд!'}
     factories=[]
     n=1
     print('Выберите фабрику:')
@@ -48,7 +52,9 @@ def set_current_factory(current_team):
         n+=1
     try:
         f=int(input('Введите номер фабрики: '))
-        return {'success': True, 'result': factories[f-1]}
+        fc=factories[f-1]
+        print('Фабрика успешно выбрана')
+        return {'success': True, 'result': fc}
     except Exception as e:
         print('Введён неверный номер')
         return {'success': False, 'error': e}
@@ -65,13 +71,14 @@ def remove_team():
         if world.teams[t-1].factories != []:
             raise Exception('Нельзя удалить команду, пока у неё имеются фабрики!')
         world.teams.pop(t-1)
+        print('Команда успешно удалена!')
         return {'success': True}
     except Exception as e:
         return {'success': False, 'error': e}
 
 
 
-def remove_factory(current_team):#дописать функцию (думаю над тем, чтобы изменить систему - все принты внутри функций, кроме ошибок)
+def remove_factory(current_team):
     print('Выберите фабрику для удаления из списка:')
     n=1
     for factory in current_team.factories:
@@ -79,15 +86,32 @@ def remove_factory(current_team):#дописать функцию (думаю н
         n+=1
     try:
         f=int(input())
-        if current_team.factories.builds != []:
+        if current_team.factories[f-1].builds != []:
             ans=input('У фабрики есть постройки, которые будут безвозвратно удалены. Вы уверены? (Y/n)')
             if ans.lower()=='n':
-                return
+                return {'success': True}
+            elif ans.lower()=='y':
+                pass
+            else:
+                print('Неверно введён ответ!')
+                return {'success': True}
+        current_team.factories.pop(f - 1)
+        print('Фабрика успешно удалена!')
+        return {'success': True}
+
+    except Exception as e:
+        return {'success': False, 'error': e}
 
 
 
 
 def build():
+    pass
+
+def set_team_name():
+    pass
+
+def set_factory_name():
     pass
 
 
@@ -112,7 +136,7 @@ def main():
                 if args:
                     res=add_team(title=args)
                     if res['success']:
-                        print('Команда успешно добавлена!')
+                        pass
                     else:
                         print(f'Произошла ошибка! {res["error"]}')
                 else:
@@ -123,7 +147,7 @@ def main():
                 if args:
                     res=add_factory(title=args, current_team=current_team)
                     if res['success']:
-                        print('Фабрика успешно добавлена!')
+                        pass
                     else:
                         print(f'Произошла ошибка! {res["error"]}')
                 else:
@@ -133,13 +157,13 @@ def main():
                 res=set_current_team()
                 if res['success']:
                     current_team=res['result']
-                    print('Команда успешно выбрана!')
+
 
             elif command=='/set_factory':
                 res=set_current_factory(current_team=current_team)
                 if res['success']:
                     current_factory=res['result']
-                    print('Фабрика успешно выбрана')
+
 
             elif command=='/exit':
                 break
@@ -147,15 +171,24 @@ def main():
             elif command=='/remove_team':
                 res=remove_team()
                 if res['success']:
-                    print('Команда успешно удалена!')
+                    pass
                 else:
                     print(f'Произошла ошибка! {res["error"]}')
 
             elif command=='/test':
                 print(world.teams[0].factories)
 
+
+            elif command=='/remove_factory':
+                res=remove_factory(current_team=current_team)
+                if res['success']:
+                    pass
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
         except:
             pass
+
 
 
 main()
