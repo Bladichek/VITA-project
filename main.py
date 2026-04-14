@@ -1,7 +1,7 @@
 from classes import *
 
 world=World()
-
+builds = [Build1]
 def add_team(title):
     try:
         team=Team(title=title)
@@ -87,7 +87,7 @@ def remove_factory(current_team):
     try:
         f=int(input())
         if current_team.factories[f-1].builds != []:
-            ans=input('У фабрики есть постройки, которые будут безвозвратно удалены. Вы уверены? (Y/n)')
+            ans=input('У фабрики есть постройки, которые будут безвозвратно удалены. Вы уверены? (Y/n): ')
             if ans.lower()=='n':
                 return {'success': True}
             elif ans.lower()=='y':
@@ -105,8 +105,21 @@ def remove_factory(current_team):
 
 
 
-def build():
-    pass
+def build(current_factory):
+    n=1
+    try:
+        print('Выберите постройку из списка:')
+        for build in builds:
+            b=build()
+            print(f'{n}. {b.title}')
+            n+=1
+
+        k=int(input('Введите номер постройки: '))
+        b=builds[k-1](current_factory)
+        current_factory.build(build=b)
+    except Exception as e:
+        return {'success': False, 'error': e}
+
 
 def set_team_name():
     pass
@@ -181,6 +194,13 @@ def main():
 
             elif command=='/remove_factory':
                 res=remove_factory(current_team=current_team)
+                if res['success']:
+                    pass
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
+            elif command=='/build':
+                res=build(current_factory=current_factory)
                 if res['success']:
                     pass
                 else:

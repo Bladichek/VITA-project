@@ -346,6 +346,18 @@ class Node():
 
 
 
+class Build1(Build):
+    def __init__(self, factory=None):
+        Build.__init__(self, factory=factory)
+        self.title='Тестовая постройка 1'
+        self.description='Описание первой тестовой постройки'
+        self.max_connections_in=0
+        self.max_connections_out=0
+        self.default_energy_profit=10
+        self.price={'iron_ore':1}
+
+
+
 
 # world=World()
 # team1=Team()

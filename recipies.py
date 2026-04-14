@@ -1,3 +1,5 @@
+#ресурсы: железная руда (iron ore); медная руда (copper_ore); органика (organic)
+
 recipies={-1: {'input1': {'none':999}, 'input2': {}, 'output1': {}, 'output2': {}},
           1: {'input1': {}, 'input2': {}, 'output1': {'res1': 20}, 'output2': {}},
           2: {'input1': {'res1': 20}, 'input2': {}, 'output1': {'res2': 10}, 'output2': {}},
