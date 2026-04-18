@@ -1,12 +1,48 @@
 from classes import *
-
+import json
 world=World()
 builds = [Build1]
+
+team_names=[]
+factories_names=[]
+
+data={'difficulty': world.difficulty, 'teams': {}}
+
+def load_data():
+    global data
+    try:
+        with open('data.json', 'r') as f:
+            data=json.load(f)
+            f.close()
+            #for доделать, тут пройтись по всем командам, потом по фабрикам и так далее. Здания пока что в словарь вообще не добавляются
+
+        print('Данные успешно загружены!')
+    except:
+        with open('data.json', 'w') as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+            f.close()
+        print('Файл с данными не обнаружен')
+
+def update_data():
+    global data
+    with open('data.json', 'w') as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+        f.close()
+
 def add_team(title):
     try:
+        if title in ['difficulty', 'teams', '/add_team']:
+            raise Exception('Недопустимое название!')
+        elif title in team_names:
+            raise Exception('Команда с таким названием уже есть!')
+        team_names.append(title)
         team=Team(title=title)
         world.add_team(team)
         print('Команда успешно добавлена!')
+
+        data['teams'][team.title]={'factories': {}, 'resources': team.resources, 'energy': team.energy, 'is_energy_active': team.is_energy_active, 'produce': team.produce}
+        update_data()
+
         return {'success': True}
     except Exception as e:
         return {'success': False, 'error': e}
@@ -16,8 +52,15 @@ def add_factory(title, current_team):
         print('Нет команд')
         return {'success': False, 'error': 'Нет команд!'}
     try:
+        if title in ['resources', 'energy', 'factories', 'is_energy_active', 'produce', '/add_factory']:
+            raise Exception('Недопустимое название фабрики!')
+        if title in factories_names:
+            raise Exception('Фабрика с таким названием уже есть!')
         factory=Factory(title=title,  team=current_team)
         print('Фабрика успешно добавлена!')
+        data['teams'][current_team.title]['factories']={title: {'builds': {}, 'profit': factory.profit}}
+        update_data()
+
         return {'success': True}
     except Exception as e:
         return {'success': False, 'error': e}
@@ -70,8 +113,10 @@ def remove_team():
         t=int(input('Введите номер команды: '))
         if world.teams[t-1].factories != []:
             raise Exception('Нельзя удалить команду, пока у неё имеются фабрики!')
+        team_names.remove(world.teams[t-1].title)
         world.teams.pop(t-1)
         print('Команда успешно удалена!')
+
         return {'success': True}
     except Exception as e:
         return {'success': False, 'error': e}
@@ -95,6 +140,7 @@ def remove_factory(current_team):
             else:
                 print('Неверно введён ответ!')
                 return {'success': True}
+        factories_names.remove(current_team.factories[f-1].title)
         current_team.factories.pop(f - 1)
         print('Фабрика успешно удалена!')
         return {'success': True}
@@ -134,6 +180,7 @@ def parse_commands(text):
     return (command, args)
 
 def main():
+    load_data()
     current_team=None
     current_factory=None
 
