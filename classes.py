@@ -1,4 +1,4 @@
-from recipies import recipies
+from recipes import recipes
 
 class World:
     def __init__(self, difficulty: int=5):
@@ -30,10 +30,11 @@ class Team:
     def __init__(self, title: str='team'):
         self.title = title
         self.resources = {}
-        self.energy = 10
+        self.energy = 0
         self.factories = []
         self.is_energy_active = True
         self.produce = {}
+        self.factories_names=[]
 
     def add_factory(self, factory):
         self.factories.append(factory)
@@ -53,16 +54,19 @@ class Team:
         self.update_energy()
         for fac in self.factories:
             for b in fac.builds:
-                b.set_recipy(b.recipy_id)
+                b.set_recipe(b.recipe_id)
 
     def update_energy(self):
         energy = 0
         for fac in self.factories:
+            fac.profit['energy']=0
             for build in fac.builds:
                 if build.is_energy_connected:
                     energy += build.current_energy_profit
+                    fac.profit['energy']+=build.current_energy_profit
+
         self.energy = energy
-        if energy <= 0:
+        if energy < 0:
             print('Сбой питания! Стройте генераторы или снизьте нагрузку на электросеть!')
             self.is_energy_active=False
         else:
@@ -98,6 +102,7 @@ class Factory:
                 self.team.resources[k]-=v
             self.builds.append(build)
             build.factory=self
+            self.team.update()
             print('Постройка успешно построена!')
             return True
 
@@ -128,8 +133,9 @@ class Build:
         self.price={}
         self.destroy_price={}
         self.title = ''
+        self.type=''
         self.description = ''
-        self.recipy_id = -1
+        self.recipe_id = -1
         self.connection_in1 = None
         self.connection_in2 = None
         self.connection_out1 = None
@@ -144,6 +150,7 @@ class Build:
         self.factory=factory
         self.efficiency = 1
         self.out={'output1': {}, 'output2': {}}
+        self.recipes=[-1]
 
     def add_connection_in(self, connection, number: int=1):
         if number==1:
@@ -154,7 +161,7 @@ class Build:
                 self.connection_in1=connection
         elif number==2:
             if self.connection_in2!=None:
-                print('Порт уж занят')
+                print('Порт уже занят')
                 return False
             else:
                 self.connection_in2=connection
@@ -211,21 +218,22 @@ class Build:
         connections[n-1].remove_connection()
         print('Соединение успешно удалено')
 
-    def set_recipy(self, recipy_id):
-        if self.recipy_id==-1 and recipy_id!=-1:
+    def set_recipe(self, recipe_id):
+        if recipe_id not in self.recipes:
+            print('У этой постройки нет такого рецепта')
+            return None
+        if self.recipe_id==-1 and recipe_id!=-1:
             self.is_energy_connected=True
-        self.recipy_id=recipy_id
+        self.recipe_id=recipe_id
         self.update_res()
         print('Рецепт успешно сменён')
 
-
-
     def update_res(self):
         coff = [1]
-        if self.recipy_id==-1:
+        if self.recipe_id==-1:
             self.is_energy_connected=False
 
-        necessary_resources1 = recipies[self.recipy_id]['input1']
+        necessary_resources1 = recipes[self.recipe_id]['input1']
         if necessary_resources1 != {}:
             for k, v in necessary_resources1.items():
                 cur_res = 0
@@ -238,7 +246,7 @@ class Build:
                     return False
                 elif cur_res < v:
                     coff.append(cur_res / v)
-        necessary_resources2 = recipies[self.recipy_id]['input2']
+        necessary_resources2 = recipes[self.recipe_id]['input2']
         if necessary_resources2 != {}:
             for k, v in necessary_resources2.items():
                 cur_res = 0
@@ -259,9 +267,9 @@ class Build:
         self.current_energy_profit=self.default_energy_profit*min(coff)
         out1 = {}
         out2 = {}
-        for k, v in recipies[self.recipy_id]['output1'].items():
+        for k, v in recipes[self.recipe_id]['output1'].items():
             out1[k] = v * self.efficiency * self.is_energy_connected
-        for k, v in recipies[self.recipy_id]['output2'].items():
+        for k, v in recipes[self.recipe_id]['output2'].items():
             out2[k] = v * self.efficiency * self.is_energy_connected
         self.out['output1'] = out1
         self.out['output2'] = out2
@@ -277,13 +285,12 @@ class Build:
             self.connection_out2.output_build.update_res()
 
 
-
 class Connection:
     def __init__(self):
         self.res = {}
         self.input_build = None
         self.output_build = None
-        self.speed = 0
+        self.speed = 10
 
     def info(self):
         return f'{self.output_build.title} ---{self.res}---> {self.input_build.title}'
@@ -308,17 +315,16 @@ class Connection:
         cur_res={}
         for k, v in res.items():
             cur_res[k] = min(v, self.speed)
-        self.res=res
+        self.res=cur_res
 
-
-
-class Node():
-    def __init__(self):
+class Node(Build):
+    def __init__(self, factory=None):
+        Build.__init__(self, factory=factory)
         self.price = {}
         self.destroy_price = {}
         self.title = ''
+        self.type='Node'
         self.description = 'Узел позволяет создавать разветвления и объединения соединений'
-        self.recipy_id = -1
         self.connection_in1 = None
         self.connection_in2 = None
         self.connection_out1 = None
@@ -330,8 +336,9 @@ class Node():
         self.default_energy_profit = 0
         self.current_energy_profit = 0
         self.is_energy_connected = True
-        self.factory = None
+        self.factory = factory
         self.out = {'output1': {}, 'output2': {}}
+        self.recipe_id=-1
 
     def update_res(self):
         max_r=0
@@ -339,22 +346,79 @@ class Node():
         if self.connection_in1 != None:
             input_res = self.connection_in1.res
         if self.connection_in2 != None:
-            input_res.update(self.connection_in2.res)
+            for k, v in self.connection_in2.res:
+                if not k in input_res.keys():
+                    input_res[k]=v
+                else:
+                    input_res[k]+=v
+
+
 
         if len(input_res.keys())>1:
             print('На вход подаются разные типы ресурсов!')
+            return False
 
 
 
-class Build1(Build):
-    def __init__(self, factory=None):
-        Build.__init__(self, factory=factory)
-        self.title='Тестовая постройка 1'
-        self.description='Описание первой тестовой постройки'
-        self.max_connections_in=0
-        self.max_connections_out=0
-        self.default_energy_profit=10
-        self.price={'iron_ore':1}
+
+        if self.connection_out1!=None and self.connection_out2!=None:
+            self.out['output1']=input_res.values()[0]/2
+            self.out['output2']=input_res.values()[0]/2
+
+        elif self.connection_out1!=None and self.connection_out2==None:
+            self.out['output1']=input_res
+
+        if self.connection_out1==None and self.connection_out2!=None:
+            self.out['output2']=input_res
+
+    def set_recipe(self, recepie_id):
+        self.update_res()
+
+    def add_connection_in(self, connection, number: int=1):
+        if number==1:
+            if self.connection_in1!=None:
+                print('Порт уже занят')
+                return False
+            else:
+                self.connection_in1=connection
+        elif number==2:
+            if self.connection_in2!=None:
+                print('Порт уже занят')
+                return False
+            else:
+                self.connection_in2=connection
+        else:
+            print('Неверный аргумент (порты 1 или 2)')
+            return False
+        connection.output_build = self
+        self.update_res()
+        print('Соединение успешно создано')
+        return True
+
+    def add_connection_out(self, connection, number: int=1):
+        if number == 1:
+            if self.connection_out1 != None:
+                print('Порт уже занят')
+                return False
+            else:
+                self.connection_out1 = connection
+        elif number == 2:
+            if self.connection_out2 != None:
+                print('Порт уже занят')
+                return False
+            else:
+                self.connection_out2 = connection
+        else:
+            print('Неверный аргумент (порты 1 или 2)')
+            return False
+        connection.input_build = self
+        print('Соединение успешно создано')
+        connection.add_res()
+        if connection.output_build != None:
+            connection.output_build.update_res()
+        return True
+
+
 
 
 
@@ -407,10 +471,10 @@ class Build1(Build):
 # build3.add_connection_out(c3)
 # build4.add_connection_in(c3)
 #
-# build1.set_recipy(1)
-# build2.set_recipy(2)
-# build3.set_recipy(3)
-# build4.set_recipy(4)
+# build1.set_recipe(1)
+# build2.set_recipe(2)
+# build3.set_recipe(3)
+# build4.set_recipe(4)
 #
 # print(c3.res)
 # print(team1.energy)
