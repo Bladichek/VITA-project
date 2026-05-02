@@ -47,3 +47,22 @@ class Smelter(Build):
         self.recipes=[-1, 5, 6]
 
 
+class Storage(Build):
+    def __init__(self, factory=None):
+        Build.__init__(self, factory)
+        self.title='Хранилище'
+        self.type='Хранилище'
+        self.description='Это хранилище'
+        self.max_connections_in = 1
+        self.default_energy_profit =0
+        self.recipes=[0]
+        self.recipe_id=0
+
+    def update_res(self):
+        if self.connection_in1!=None:
+            res=self.connection_in1.res
+            for k, v in res.items():
+                if k not in self.factory.profit.keys():
+                    self.factory.profit[k]=v
+                else:
+                    self.factory.profit[k]+=v

@@ -5,7 +5,7 @@ world=World()
 from matplotlib.pyplot import show
 from networkx import DiGraph, draw
 
-builds = [Build1, Drill_I, HUB, Smelter, Node]
+builds = [Build1, Drill_I, HUB, Smelter, Node, Storage]
 
 team_names=[]
 
@@ -13,12 +13,11 @@ team_names=[]
 data={'difficulty': world.difficulty, 'teams': {}}
 
 def load_data():
-    global data
-    try:
+        global data
+    # try:
         with open('data.json', 'r') as f:
             data=json.load(f)
             f.close()
-            #доделать, тут пройтись по всем командам, потом по фабрикам и так далее. Здания пока что в словарь вообще не добавляются
             for team_name, value in data['teams'].items():
                 team_names.append(team_name)
                 team = Team(title=team_name)
@@ -27,18 +26,64 @@ def load_data():
                 team.is_energy_active=value['is_energy_active']
                 team.produce=value['produce']
                 team.factories_names=value['factories_names']
+
                 for factories_name, value1 in value['factories'].items():
                     factory = Factory(title=factories_name, team=team)
                     factory.profit=value1['profit']
                     factory.builds=[]
+
+                    for build_name, value3 in value1['builds'].items():
+                        if value3['max_health']==-1:
+                            h=float('inf')
+                        else:
+                            h=value3['max_health']
+                        b=builds[value3['build_type']](factory)
+                        b.price=value3['price']
+                        b.destroy_price=value3['destroy_price']
+                        b.title=build_name
+                        b.type=value3['type']
+                        b.description=value3['description']
+                        b.max_connections_in=value3['max_connections_in']
+                        b.max_connections_out=value3['max_connections_out']
+                        b.max_health=h
+                        b.health=value3['health']
+                        b.default_energy_profit=value3['default_energy_profit']
+                        b.current_energy_profit=value3['current_energy_profit']
+                        b.is_energy_connected=value3['is_energy_connected']
+                        b.efficiency=value3['efficiency']
+                        b.out=value3['out']
+                        b.recipes=value3['recipes']
+
+                        factory.builds.append(b)
+                    print(value1)
+                    for connection_name, value2 in value1['connections'].items():
+                        c=Connection()
+                        c.res= value2['res']
+                        c.speed=value2['speed']
+                        if value2['port'] == 'A':
+                            port=1
+                        else:
+                            port=2
+                        input_build_name = value2['input_build']
+                        output_build_name = value2['output_build']
+                        #пройтись по постройкам, получить входные и выходные, подключить
+                        for b in factory.builds:
+                            if b.title==input_build_name:
+                                b.add_connection_out(c, port)
+                            elif b.title==output_build_name:
+                                b.add_connection_in(c, port)
+                    team.update()
+
+
+
                 world.teams.append(team)
 
         print('Данные успешно загружены!')
-    except:
-        with open('data.json', 'w') as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
-            f.close()
-        print('Файл с данными не обнаружен')
+    # except Exception as e:
+    #     with open('data.json', 'w') as f:
+    #         json.dump(data, f, ensure_ascii=False, indent=4)
+    #         f.close()
+    #     print('Файл с данными не обнаружен или повреждён', e)
 
 def update_data():
     global data
@@ -75,7 +120,7 @@ def add_factory(title, current_team: Team):
             raise Exception('Фабрика с таким названием уже есть!')
         factory=Factory(title=title,  team=current_team)
         print('Фабрика успешно добавлена!')
-        data['teams'][current_team.title]['factories'][title]={'builds': {}, 'profit': factory.profit}
+        data['teams'][current_team.title]['factories'][title]={'builds': {}, 'connections': {}, 'profit': factory.profit}
         current_team.factories_names.append(title)
         update_data()
 
@@ -169,7 +214,7 @@ def remove_factory(current_team: Team):
 
 
 
-def build(current_factory: Factory):
+def build(current_factory: Factory, current_team: Team):
     n=1
     try:
         print('Выберите постройку из списка:')
@@ -201,6 +246,28 @@ def build(current_factory: Factory):
                 counter += 1
 
         current_factory.build(build=b)
+        if b.max_health==float('inf'):
+            h=-1
+        else:
+            h=b.max_health
+        data['teams'][current_team.title]['factories'][current_factory.title]['builds'][b.title]={'build_type': k-1,
+                                                                            'price': b.price,
+                                                                            'destroy_price': b.destroy_price,
+                                                                            'type': b.type,
+                                                                            'description': b.description,
+                                                                            'recipe_id': b.recipe_id,
+                                                                            'max_connections_in': b.max_connections_in,
+                                                                            'max_connections_out': b.max_connections_out,
+                                                                            'max_health': h,
+                                                                            'health': b.health,
+                                                                            'default_energy_profit': b.default_energy_profit,
+                                                                            'current_energy_profit': b.current_energy_profit,
+                                                                            'is_energy_connected': b.is_energy_connected,
+                                                                            'efficiency': b.efficiency,
+                                                                            'out': b.out,
+                                                                            'recipes': b.recipes,
+                                                                            }
+        update_data()
         return {'success': True}
     except Exception as e:
         return {'success': False, 'error': e}
@@ -264,9 +331,9 @@ def set_recipe(current_factory: Factory):
         return {'success': False, 'error': e}
 
 def add_connection(current_factory):
-    c=Connection()
-    n=1
-    try:
+        c=Connection()
+        n=1
+    # try:
         print('Выберите постройку из списка, выход которой будет подключён:')
         for b in current_factory.builds:
 
@@ -299,7 +366,7 @@ def add_connection(current_factory):
         build_out = current_factory.builds[k - 1]
         if build_in==build_out:
             raise Exception('Нельзя подключать постройку саму к себе!')
-
+        port='A'
         if build_out.max_connections_in == 0:
             raise Exception('У этой постройки нет портов для подключений')
         elif build_out.max_connections_in == 2:
@@ -313,11 +380,15 @@ def add_connection(current_factory):
 
         else:
             build_out.add_connection_in(c)
-
-
+        data['teams'][current_factory.team.title]['factories'][current_factory.title]['connections'][f'{build_out.title}-{build_in.title}']={'res': c.res,
+                                                                                                                       'input_build': build_in.title,
+                                                                                                                       'output_build': build_out.title,
+                                                                                                                       'speed': c.speed,
+                                                                                                                                             'port': port}
+        update_data()
         return {'success': True}
-    except Exception as e:
-        return {'success': False, 'error': e}
+    # except Exception as e:
+    #     return {'success': False, 'error': e}
 
 
 
@@ -423,7 +494,7 @@ def main():
                     print(f'Произошла ошибка! {res["error"]}')
 
             elif command=='/build':
-                res=build(current_factory=current_factory)
+                res=build(current_factory=current_factory, current_team=current_team)
                 if res['success']:
                     pass
                 else:
