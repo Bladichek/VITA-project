@@ -109,21 +109,21 @@ class Factory:
     def destroy(self):
         for i in range(len(self.builds)):
             print(f'{i+1}. {self.builds[i].title}')
-            n = int(input())
-            if n < 1 or n > len(self.builds):
-                print('Неверно указанное значение, попробуйте снова')
-                return False
-            p=self.builds[n-1].destroy_price
-            for k, v in p.items():
-                if k not in self.team.resources.keys():
-                    self.team.resources[k]=v
-                else:
-                    self.team.resources[k] += v
-            self.builds.pop(n - 1)
-            print('Постройка успешно демонтирована!')
-            print('Ресурсов получено:')
-            for k, v in p.items():
-                print(f'Получено {v} ресурса {k}')
+        n = int(input())
+        if n < 1 or n > len(self.builds):
+            print('Неверно указанное значение, попробуйте снова')
+            return False
+        p=self.builds[n-1].destroy_price
+        for k, v in p.items():
+            if k not in self.team.resources.keys():
+                self.team.resources[k]=v
+            else:
+                self.team.resources[k] += v
+        self.builds.pop(n - 1)
+        print('Постройка успешно демонтирована!')
+        print('Ресурсов получено:')
+        for k, v in p.items():
+            print(f'Получено {v} ресурса {k}')
 
 
 
@@ -204,19 +204,21 @@ class Build:
         if connections_in:
             print('Входы:')
             for i in connections_in:
-                print(i)
+                #print(i)
                 print(f'{s}. {i.info()}')
                 s+=1
+
         if connections_out:
             print('Выходы')
             for i in connections_out:
-                print(f'{s}. {i.info}')
+                print(f'{s}. {i.info()}')
         n=int(input('Введите номер для удаления: '))
-        if n>len(connections)+1 or n<1:
+        if n>len(connections) or n<1:
             print('Неверно введённый номер')
             return False
         connections[n-1].remove_connection()
         print('Соединение успешно удалено')
+        return connections[n-1]
 
     def set_recipe(self, recipe_id):
         if recipe_id not in self.recipes:
@@ -242,7 +244,14 @@ class Build:
                 if cur_res == 0:
                     print('Недостаточно ресурсов. Постройка неактивна')
                     self.current_energy_profit = 0
+                    self.out['output1'] = {}
+                    self.out['output2'] = {}
                     self.factory.team.update_energy()
+                    for con in (self.connection_out1, self.connection_out2):
+                        if con is not None:
+                            con.add_res()
+                            if con.output_build is not None:
+                                con.output_build.update_res()
                     return False
                 elif cur_res < v:
                     coff.append(cur_res / v)
@@ -255,7 +264,14 @@ class Build:
                 if cur_res == 0:
                     print('Недостаточно ресурсов. Постройка неактивна')
                     self.current_energy_profit = 0
+                    self.out['output1'] = {}
+                    self.out['output2'] = {}
                     self.factory.team.update_energy()
+                    for con in (self.connection_out1, self.connection_out2):
+                        if con is not None:
+                            con.add_res()
+                            if con.output_build is not None:
+                                con.output_build.update_res()
                     return False
                 elif cur_res < v:
                     coff.append(cur_res / v)
@@ -268,20 +284,20 @@ class Build:
         out1 = {}
         out2 = {}
         for k, v in recipes[self.recipe_id]['output1'].items():
-            out1[k] = v * self.efficiency * self.is_energy_connected
+            out1[k] = v * self.efficiency * self.is_energy_connected * self.factory.team.is_energy_active
         for k, v in recipes[self.recipe_id]['output2'].items():
-            out2[k] = v * self.efficiency * self.is_energy_connected
+            out2[k] = v * self.efficiency * self.is_energy_connected * self.factory.team.is_energy_active
         self.out['output1'] = out1
         self.out['output2'] = out2
         self.factory.team.update_energy()
         for con in [self.connection_in1, self.connection_in2, self.connection_out2, self.connection_out1]:
-            if con!=None:
+            if con is not None:
                 con.add_res()
 
 
-        if self.connection_out1!=None:
+        if self.connection_out1 is not None:
             self.connection_out1.output_build.update_res()
-        if self.connection_out2!=None:
+        if self.connection_out2 is not None:
             self.connection_out2.output_build.update_res()
 
 
@@ -293,18 +309,41 @@ class Connection:
         self.speed = 10
 
     def info(self):
-        return f'{self.output_build.title} ---{self.res}---> {self.input_build.title}'
+        return f'{self.input_build.title} ---{self.res}---> {self.output_build.title}'
 
     def remove_connection(self):
+        input_build=self.input_build
+        output_build=self.output_build
         for i in [self.input_build, self.output_build]:
+            if i is None:
+                print(1)
+                continue
             if i.connection_in1==self:
                 i.connection_in1=None
-            elif i.connection_in2==self:
+                print(2)
+            if i.connection_in2==self:
                 i.connection_in2=None
-            elif i.connection_out1==self:
+                print(3)
+            if i.connection_out1==self:
                 i.connection_out1=None
-            elif i.connection_out2==None:
+                print(4)
+            if i.connection_out2==self:
                 i.connection_out2=None
+                print(5)
+
+        self.res = {}
+
+
+        self.input_build=None
+        self.output_build=None
+        if input_build is not None:
+            input_build.update_res()
+        if output_build is not None:
+            output_build.update_res()
+
+
+
+
 
     def add_res(self):
         if self.input_build.connection_out1 == self:
@@ -341,35 +380,40 @@ class Node(Build):
         self.recipe_id=-1
 
     def update_res(self):
-        max_r=0
         input_res={}
-        if self.connection_in1 != None:
-            input_res = self.connection_in1.res
-        if self.connection_in2 != None:
-            for k, v in self.connection_in2.res:
-                if not k in input_res.keys():
-                    input_res[k]=v
-                else:
-                    input_res[k]+=v
+        if self.connection_in1 is not None:
+            input_res = self.connection_in1.res.copy()
+        if self.connection_in2 is not None:
+            for k, v in self.connection_in2.res.items():
+                input_res[k] = input_res.get(k,0)+v
 
+        out1={}
+        out2={}
 
+        if input_res:
+            if len(input_res.keys())>1:
+                print('На вход подаются разные типы ресурсов!')
+                return False
+            key, amount = list(input_res.keys())[0], list(input_res.values())[0]
 
-        if len(input_res.keys())>1:
-            print('На вход подаются разные типы ресурсов!')
-            return False
+            if self.connection_out1 is not None and self.connection_out2 is not None:
+                out1 = {key: amount / 2}
+                out2 = {key: amount / 2}
+            elif self.connection_out1 is not None:
+                out1 = {key: amount}
+            elif self.connection_out2 is not None:
+                out2 = {key: amount}
 
+        self.out['output1'] = out1
+        self.out['output2'] = out2
+        for con in [self.connection_in1, self.connection_in2, self.connection_out2, self.connection_out1]:
+            if con is not None:
+                con.add_res()
 
-
-
-        if self.connection_out1!=None and self.connection_out2!=None:
-            self.out['output1']=input_res.values()[0]/2
-            self.out['output2']=input_res.values()[0]/2
-
-        elif self.connection_out1!=None and self.connection_out2==None:
-            self.out['output1']=input_res
-
-        if self.connection_out1==None and self.connection_out2!=None:
-            self.out['output2']=input_res
+        if self.connection_out1 is not None:
+            self.connection_out1.output_build.update_res()
+        if self.connection_out2 is not None:
+            self.connection_out2.output_build.update_res()
 
     def set_recipe(self, recepie_id):
         self.update_res()

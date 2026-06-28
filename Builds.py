@@ -18,7 +18,7 @@ class HUB(Build):
         self.title = 'Хаб'
         self.type='Хаб'
         self.description = 'Хаб'
-        self.default_energy_profit = 10
+        self.default_energy_profit = 100
         self.max_health=float('inf')
         self.recipes = [0]
         self.recipe_id=0
