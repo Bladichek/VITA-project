@@ -81,7 +81,9 @@ def load_data():
                             elif b.title==output_build_name:
                                 b.add_connection_in(c, port1)
                     team.update()
-                    if factory.title==data['current_factory'] and team.title==data['current_team']:
+                    cur_team = data.get('current_team')
+                    cur_factory = data.get('current_factory')
+                    if cur_factory and cur_team and factory.title==cur_factory and team.title==cur_team:
                         current_factory=factory
                 if team.title==data['current_team']:
                     current_team=team
@@ -216,8 +218,7 @@ def add_team(title):
         team=Team(title=title)
         world.add_team(team)
         print('Команда успешно добавлена!')
-
-        update_data()
+        update_data(current_team=team.title, current_factory='no')
 
         return {'success': True, 'result': team}
     except Exception as e:
@@ -236,7 +237,7 @@ def add_factory(title, current_team: Team):
         print('Фабрика успешно добавлена!')
         #data['teams'][current_team.title]['factories'][title]={'builds': {}, 'connections': {}, 'profit': factory.profit}
         current_team.factories_names.append(title)
-        update_data()
+        update_data(current_factory=factory.title)
 
         return {'success': True, 'result': factory}
     except Exception as e:
@@ -364,10 +365,10 @@ def build(current_factory: Factory, current_team: Team):
                 counter += 1
 
         current_factory.build(build=b)
-        if b.max_health==float('inf'):
-            h=-1
-        else:
-            h=b.max_health
+        # if b.max_health==float('inf'):
+        #     h=-1
+        # else:
+        #     h=b.max_health
         # data['teams'][current_team.title]['factories'][current_factory.title]['builds'][b.title]={'build_type': k-1,
         #                                                                     'price': b.price,
         #                                                                     'destroy_price': b.destroy_price,
@@ -385,6 +386,10 @@ def build(current_factory: Factory, current_team: Team):
         #                                                                     'out': b.out,
         #                                                                     'recipes': b.recipes,
         #                                                                     }
+        if len(b.recipes)>1:
+            n=input('Начальный рецепт (необязательно): ')
+            if n.isdigit():
+                b.set_recipe(int(n))
         update_data()
         return {'success': True}
     except Exception as e:
@@ -429,7 +434,7 @@ def info(current_team: Team):
             print()
         tabs-=1
     for c in cons:
-        if c.input_build.factory.title==current_factory.title and c.input_build.factory.title==current_factory.team.title==current_team.title:
+        if c.input_build.factory.title==current_factory.title and c.input_build.factory.team.title==current_team.title:
             print(c.info())
 
 def set_recipe(current_factory: Factory):
@@ -438,15 +443,34 @@ def set_recipe(current_factory: Factory):
         print('Выберите постройку из списка:')
         for b in current_factory.builds:
 
-            print(f'{n}. {b.title} ({b.type})')
+            print(f'{n}. {b.title} ({b.type}), текущий рецепт: {b.recipe_id}')
             n += 1
 
         k = int(input('Введите номер постройки: '))
-        recipe_id=int(input('Введите номер рецепта: '))
-        if current_factory.builds[k - 1].type == 'Node':
-            raise Exception('У узла нет рецептов')
-        current_factory.builds[k - 1].set_recipe(recipe_id)
-        #data['teams'][current_factory.team.title]['factories'][current_factory.title]['builds'][current_factory.builds[k - 1].title]['recipe_id']=recipe_id
+        b=current_factory.builds[k-1]
+
+        if len(b.recipes) == 1:
+            raise Exception('У постройки нет рецептов')
+
+        print('Доступные рецепты:')
+        for i in b.recipes:
+            if i == -1: continue
+            recipe=recipes[i]
+            in_a=''
+            in_b=''
+            out_a=''
+            out_b=''
+            if recipe['input1'] != {}:
+                in_a=f'Вход А: {list(recipe["input1"].keys())[0]} - {list(recipe["input1"].values())[0]} '
+            if recipe['input2'] != {}:
+                in_b=f'Вход B: {list(recipe["input2"].keys())[0]} - {list(recipe["input2"].values())[0]} '
+            if recipe['output1'] != {}:
+                out_a=f'Выход А: {list(recipe["output1"].keys())[0]} - {list(recipe["output1"].values())[0]} '
+            if recipe['output2'] != {}:
+                out_b=f'Выход B: {list(recipe["output2"].keys())[0]} - {list(recipe["output2"].values())[0]}'
+            print(f'{i}. {in_a}{in_b}--> {out_a}{out_b}')
+        recipe_id = int(input('Введите номер рецепта: '))
+        b.set_recipe(recipe_id)
         update_data()
 
         return {'success': True}
@@ -512,7 +536,8 @@ def add_connection(current_factory):
             if r==False:
                 c.remove_connection()
         else:
-            build_out.add_connection_in(c)
+            r=build_out.add_connection_in(c)
+
         build_in.update_res()
         # data['teams'][current_factory.team.title]['factories'][current_factory.title]['connections'][f'{build_out.title}-{build_in.title}']={'res': c.res,
         #                                                                                                                'input_build': build_in.title,
@@ -700,6 +725,8 @@ def main():
                     pass
                 else:
                     print('Произошла ошибка')
+            elif command=='/update':
+                current_team.update()
 
 
 

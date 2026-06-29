@@ -51,10 +51,18 @@ class Team:
 
     def update(self):
         for _ in range(2):
-            self.update_energy()
+            self.produce={}
+
             for fac in self.factories:
+                fac.profit={}
                 for b in fac.builds:
                     b.set_recipe(b.recipe_id)
+                    if b.type=='Хранилище':
+                        for k, v in b.out.items():
+                            fac.profit[k]=fac.profit.get(k, 0)+v
+                self.update_energy()
+                for k, v in fac.profit.items():
+                    self.produce[k]=self.produce.get(k, 0)+v
 
     def update_energy(self):
         energy = 0
@@ -383,6 +391,7 @@ class Node(Build):
         self.factory = factory
         self.out = {'output1': {}, 'output2': {}}
         self.recipe_id=-1
+        self.recipes=[-1]
 
     def update_res(self):
         input_res={}
@@ -470,63 +479,6 @@ class Node(Build):
 
 
 
-
-
-# world=World()
-# team1=Team()
-#
-# world.add_team(team1)
-#
-# factory=Factory(team=team1)
-#
-# build1=Build()
-# build1.title='build1'
-# build1.max_connections_out=1
-# build1.default_energy_profit=-10
-#
-# build2=Build()
-# build2.title='build2'
-# build2.max_connections_in=1
-# build2.max_connections_out=1
-# build2.default_energy_profit=50
-#
-# build3=Build()
-# build3.title='build3'
-# build3.max_connections_in=1
-# build3.max_connections_out=1
-# build3.default_energy_profit=-10
-#
-# build4=Build()
-# build4.title='build4'
-# build4.max_connections_in=1
-# build4.default_energy_profit=-30
-#
-# factory.build(build1)
-# factory.build(build2)
-# factory.build(build3)
-# factory.build(build4)
-#
-#
-# c1=Connection()
-# c2=Connection()
-# c3=Connection()
-#
-# build1.add_connection_out(c1)
-# build2.add_connection_in(c1)
-#
-# build2.add_connection_out(c2)
-# build3.add_connection_in(c2)
-#
-# build3.add_connection_out(c3)
-# build4.add_connection_in(c3)
-#
-# build1.set_recipe(1)
-# build2.set_recipe(2)
-# build3.set_recipe(3)
-# build4.set_recipe(4)
-#
-# print(c3.res)
-# print(team1.energy)
 
 
 

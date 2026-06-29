@@ -57,12 +57,12 @@ class Storage(Build):
         self.default_energy_profit =0
         self.recipes=[0]
         self.recipe_id=0
+        self.out={}
 
     def update_res(self):
-        if self.connection_in1!=None:
-            res=self.connection_in1.res
-            for k, v in res.items():
-                if k not in self.factory.profit.keys():
-                    self.factory.profit[k]=v
-                else:
-                    self.factory.profit[k]+=v
+        if self.connection_in1 is not None:
+            self.out=self.connection_in1.res.copy()
+        else:
+            self.out={}
+
+
