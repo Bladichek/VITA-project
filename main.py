@@ -8,16 +8,18 @@ from networkx import DiGraph, draw
 builds = [Build1, Drill_I, HUB, Smelter, Node, Storage]
 cons=[]
 team_names=[]
-
+current_team=None
+current_factory=None
 
 data={'difficulty': world.difficulty, 'teams': {}}
 
 def load_data():
-    global data
+    global data, current_team, current_factory
     try:
         with open('data.json', 'r') as f:
             data=json.load(f)
             f.close()
+
             for team_name, value in data['teams'].items():
                 team_names.append(team_name)
                 team = Team(title=team_name)
@@ -79,10 +81,15 @@ def load_data():
                             elif b.title==output_build_name:
                                 b.add_connection_in(c, port1)
                     team.update()
+                    if factory.title==data['current_factory'] and team.title==data['current_team']:
+                        current_factory=factory
+                if team.title==data['current_team']:
+                    current_team=team
 
 
 
                 world.teams.append(team)
+
 
         print('Данные успешно загружены!')
     except Exception as e:
@@ -126,7 +133,6 @@ def _connection_to_dict(c):
     in_title = c.input_build.title if c.input_build is not None else None
     out_title = c.output_build.title if c.output_build is not None else None
 
-    # порт приёмника: connection_in2 -> 'B', иначе 'A'
     if c.output_build.connection_in2 is c:
         port1 = 'B'
     elif c.output_build.connection_in1 is c:
@@ -149,8 +155,7 @@ def _connection_to_dict(c):
 def _factory_to_dict(factory):
     builds_dict = {b.title: _build_to_dict(b) for b in factory.builds}
 
-    # Соединение относится к фабрике, если оба его конца — её постройки.
-    # Перебираем порты построек и берём каждое соединение один раз (по id).
+
     seen = set()
     connections_dict = {}
     for b in factory.builds:
@@ -175,7 +180,6 @@ def _factory_to_dict(factory):
 
 
 def _team_to_dict(team):
-    """Сериализует команду со всеми фабриками."""
     factories_dict = {f.title: _factory_to_dict(f) for f in team.factories}
     return {
         'factories': factories_dict,
@@ -187,14 +191,17 @@ def _team_to_dict(team):
     }
 
 
-def update_data():
-    """Универсальное сохранение: полностью перестраивает data из объекта world
-    и записывает его в data.json. Вызывается без аргументов — обратно совместима
-    со старой версией."""
+def update_data(current_team='', current_factory=''):
     global data
+    if current_team == '':
+        current_team = data['current_team']
+    if current_factory == '':
+        current_factory = data['current_factory']
     data = {
         'difficulty': world.difficulty,
         'teams': {team.title: _team_to_dict(team) for team in world.teams},
+        'current_team': current_team,
+        'current_factory': current_factory,
     }
     with open('data.json', 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
@@ -246,6 +253,7 @@ def set_current_team():
     try:
         t = int(input('Введите номер команды: '))
         tm=teams[t-1]
+        update_data(current_team=tm.title)
         print('Команда успешно выбрана!')
         return {'success': True, 'result': tm}
     except Exception as e:
@@ -267,6 +275,7 @@ def set_current_factory(current_team: Team):
         f=int(input('Введите номер фабрики: '))
         fc=factories[f-1]
         print('Фабрика успешно выбрана')
+        update_data(current_team=fc.title)
         return {'success': True, 'result': fc}
     except Exception as e:
         print('Введён неверный номер')
@@ -420,7 +429,8 @@ def info(current_team: Team):
             print()
         tabs-=1
     for c in cons:
-        print(c.info())
+        if c.input_build.factory.title==current_factory.title and c.input_build.factory.title==current_factory.team.title==current_team.title:
+            print(c.info())
 
 def set_recipe(current_factory: Factory):
     n = 1
@@ -561,6 +571,14 @@ def remove_connection(current_factory):
     except Exception as e:
         return {'success': False, 'error': e}
 
+def destroy(current_factory):
+    r=current_factory.destroy()
+    if r:
+        update_data()
+        return {'success': True}
+    else:
+        return {'success': False}
+
 
 def set_team_name():
     pass
@@ -577,8 +595,7 @@ def parse_commands(text):
 
 def main():
     load_data()
-    current_team=None
-    current_factory=None
+    global current_factory, current_team
 
     while True:
 
@@ -613,12 +630,14 @@ def main():
                 res=set_current_team()
                 if res['success']:
                     current_team=res['result']
+                    update_data(current_team=current_team.title)
 
 
             elif command=='/set_factory':
                 res=set_current_factory(current_team=current_team)
                 if res['success']:
                     current_factory=res['result']
+                    update_data(current_factory=current_factory.title)
 
 
             elif command=='/exit':
@@ -675,6 +694,12 @@ def main():
                     print('Соединение успешно удалено')
                 else:
                     print(f'Произошла ошибка! {res["error"]}')
+            elif command=='/destroy':
+                res=destroy(current_factory)
+                if res['success']:
+                    pass
+                else:
+                    print('Произошла ошибка')
 
 
 

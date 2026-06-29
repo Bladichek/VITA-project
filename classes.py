@@ -49,12 +49,12 @@ class Team:
         self.factories.pop(n-1)
         print('Фабрика успешно удалена!')
 
-
     def update(self):
-        self.update_energy()
-        for fac in self.factories:
-            for b in fac.builds:
-                b.set_recipe(b.recipe_id)
+        for _ in range(2):
+            self.update_energy()
+            for fac in self.factories:
+                for b in fac.builds:
+                    b.set_recipe(b.recipe_id)
 
     def update_energy(self):
         energy = 0
@@ -119,11 +119,16 @@ class Factory:
                 self.team.resources[k]=v
             else:
                 self.team.resources[k] += v
-        self.builds.pop(n - 1)
+        b=self.builds.pop(n - 1)
+        for c in (b.connection_in1, b.connection_in2, b.connection_out1, b.connection_out2):
+            if c is not None:
+                c.remove_connection()
         print('Постройка успешно демонтирована!')
         print('Ресурсов получено:')
         for k, v in p.items():
             print(f'Получено {v} ресурса {k}')
+        self.team.update()
+        return True
 
 
 
