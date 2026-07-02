@@ -1,5 +1,99 @@
 from recipes import recipes
 
+
+resources=['Алюминиевый корпус',
+           'Медная проволока',
+           'Камера сгорания',
+           'Урановая руда',
+           'Мотор',
+           'Золотая руда',
+           'Титановый корпус',
+           'Железный слиток',
+           'Эмалевое стекло',
+           'Печатная плата',
+           'Органика',
+           'Литиевый слиток',
+           'Залежи аметиста',
+           'Медная руда',
+           'Иридиевый слиток',
+           'ЭМ катушка',
+           'Резина',
+           'Алюминий',
+           'Топливо',
+           'Двигатель',
+           'Железная руда',
+           'Модуль контроля температуры',
+           'Бензол',
+           'Серебро',
+           'Уголь',
+           'Ядро ИИ',
+           'Нефть',
+           'Ионные ускорители',
+           'Аккумулятор',
+           'Иридий',
+           'Бочка',
+           'Полиметаллическая руда',
+           'Микросхема',
+           'Щебень',
+           'Песок',
+           'Универсальный механизм',
+           'Титан',
+           'Электромотор',
+           'Сенсор',
+           'Биореактор',
+           'Медный слиток',
+           'Мазут',
+           'Набор труб',
+           'Литиевая руда',
+           'Турбина',
+           'Индуктивный привод',
+           'Смазка',
+           'Глинозём',
+           'Оптоволоконный кабель',
+           'Пластмассовый корпус',
+           'Древесина',
+           'Многожильный провод',
+           'Радиопередатчик',
+           'Ядерная ячейка',
+           'Кремний',
+           'Процессор',
+           'Боксит',
+           'ЭМ стабилизатор плазмы',
+           'Бетон',
+           'Шестерни',
+           'Тритий',
+           'Ротор',
+           'Железный корпус',
+           'Остеклённая панель',
+           'Пластиковый контейнер',
+           'Сверхпроводящий сплав',
+           'Турбогенератор магнитного поля',
+           'Высокотехнологичная обшивка',
+           'Контроллер ИИ роя',
+           'Золотой слиток',
+           'Известняк',
+           'Магнит',
+           'Угольный брикет',
+           'Дисплей',
+           'Кварцевый кристалл',
+           'Квантовый чип',
+           'Метан',
+           'Пластик',
+           'Колебательный контур',
+           'Железная пластина',
+           'Эмаль',
+           'Болты',
+           'Радиатор',
+           'Вода',
+           'Серная кислота',
+           'Компьютерный чип',
+           'Цемент',
+           'Стекло',
+           'Золотая проволока',
+           'Энергия',
+           'Реактивный двигатель']
+
+
 class World:
     def __init__(self, difficulty: int=5):
         self.teams=[]
@@ -35,6 +129,7 @@ class Team:
         self.is_energy_active = True
         self.produce = {}
         self.factories_names=[]
+        self.droids_profit={}
 
     def add_factory(self, factory):
         self.factories.append(factory)
@@ -49,10 +144,27 @@ class Team:
         self.factories.pop(n-1)
         print('Фабрика успешно удалена!')
 
+    def add_res(self, resource, amount):
+        if resource not in resources:
+            return {'success': False, 'error': 'Нет такого типа ресурсов'}
+        self.resources[resource] = self.resources.get(resource, 0) + amount
+        return {'success': True}
+
+    def set_res(self, resource, amount):
+        if resource not in resources:
+            return {'success': False, 'error': 'Нет такого типа ресурсов'}
+        self.resources[resource]=amount
+        return {'success': True}
+
+    def res(self):
+        for k, v in self.resources.items():
+            print(f'{k}: {v}')
+
+
     def update(self):
         for _ in range(2):
             self.produce={}
-
+            self.update_droids()
             for fac in self.factories:
                 fac.profit={}
                 for b in fac.builds:
@@ -60,10 +172,22 @@ class Team:
                     if b.type=='Хранилище':
                         for k, v in b.out.items():
                             fac.profit[k]=fac.profit.get(k, 0)+v
+
                 self.update_energy()
                 for k, v in fac.profit.items():
                     self.produce[k]=self.produce.get(k, 0)+v
-
+    def update_droids(self):
+        self.droids_profit = {}
+        for fac in self.factories:
+            for b in fac.builds:
+                if b.type == 'Станция дроидов':
+                    if b.profit != {}:
+                        res = list(b.profit.keys())[0]
+                        amount = list(b.profit.values())[0]
+                        if b.type == 'accept':
+                            self.droids_profit[res] = self.droids_profit.get(res, 0) + amount
+                        else:
+                            self.droids_profit[res] = self.droids_profit.get(res, 0) + amount
     def update_energy(self):
         energy = 0
         for fac in self.factories:

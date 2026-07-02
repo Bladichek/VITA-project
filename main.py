@@ -5,7 +5,7 @@ world=World()
 from matplotlib.pyplot import show
 from networkx import DiGraph, draw
 
-builds = [Build1, Drill_I, HUB, Smelter, Node, Storage]
+
 cons=[]
 team_names=[]
 current_team=None
@@ -111,6 +111,27 @@ def _build_to_dict(b):
         build_type = builds.index(type(b))
     except ValueError:
         build_type = 0
+    if b.type=='Станция дроидов':
+        return {
+            'build_type': build_type,
+            'price': b.price,
+            'destroy_price': b.destroy_price,
+            'type': b.type,
+            'description': b.description,
+            'recipe_id': b.recipe_id,
+            'max_connections_in': b.max_connections_in,
+            'max_connections_out': b.max_connections_out,
+            'max_health': _health_for_save(b.max_health),
+            'health': _health_for_save(b.health),
+            'default_energy_profit': b.default_energy_profit,
+            'current_energy_profit': b.current_energy_profit,
+            'is_energy_connected': b.is_energy_connected,
+            'efficiency': b.efficiency,
+            'out': b.out,
+            'recipes': b.recipes,
+            'mode': b.mode,
+            'profit': b.profit,
+        }
     return {
         'build_type': build_type,
         'price': b.price,
@@ -190,6 +211,7 @@ def _team_to_dict(team):
         'is_energy_active': team.is_energy_active,
         'produce': team.produce,
         'factories_names': team.factories_names,
+        'droids_profit': team.droids_profit,
     }
 
 
@@ -364,28 +386,9 @@ def build(current_factory: Factory, current_team: Team):
                     break
                 counter += 1
 
-        current_factory.build(build=b)
-        # if b.max_health==float('inf'):
-        #     h=-1
-        # else:
-        #     h=b.max_health
-        # data['teams'][current_team.title]['factories'][current_factory.title]['builds'][b.title]={'build_type': k-1,
-        #                                                                     'price': b.price,
-        #                                                                     'destroy_price': b.destroy_price,
-        #                                                                     'type': b.type,
-        #                                                                     'description': b.description,
-        #                                                                     'recipe_id': b.recipe_id,
-        #                                                                     'max_connections_in': b.max_connections_in,
-        #                                                                     'max_connections_out': b.max_connections_out,
-        #                                                                     'max_health': h,
-        #                                                                     'health': b.health,
-        #                                                                     'default_energy_profit': b.default_energy_profit,
-        #                                                                     'current_energy_profit': b.current_energy_profit,
-        #                                                                     'is_energy_connected': b.is_energy_connected,
-        #                                                                     'efficiency': b.efficiency,
-        #                                                                     'out': b.out,
-        #                                                                     'recipes': b.recipes,
-        #                                                                     }
+        r=current_factory.build(build=b)
+        if not r:
+            raise Exception('Произошла ошибка')
         if len(b.recipes)>1:
             n=input('Начальный рецепт (необязательно): ')
             if n.isdigit():
@@ -404,6 +407,7 @@ def info(current_team: Team):
     print(f'is_energy_active: {current_team.is_energy_active}')
     print(f'produce: {current_team.produce}')
     print(f'factories_names: {current_team.factories_names}')
+    print(f'droids_profit: {current_team.droids_profit}')
 
     tabs+=1
     print('Factories')
@@ -431,6 +435,9 @@ def info(current_team: Team):
             print(f'\t' * tabs + f'efficiency: {build.efficiency}')
             print(f'\t' * tabs + f'out: {build.out}')
             print(f'\t' * tabs + f'recipes: {build.recipes}')
+            if build.type=='Станция дроидов':
+                print(f'\t' * tabs + f'profit: {build.profit}')
+                print(f'\t' * tabs + f'mode: {build.mode}')
             print()
         tabs-=1
     for c in cons:
@@ -539,13 +546,6 @@ def add_connection(current_factory):
             r=build_out.add_connection_in(c)
 
         build_in.update_res()
-        # data['teams'][current_factory.team.title]['factories'][current_factory.title]['connections'][f'{build_out.title}-{build_in.title}']={'res': c.res,
-        #                                                                                                                'input_build': build_in.title,
-        #                                                                                                                'output_build': build_out.title,
-        #                                                                                                                'speed': c.speed,
-        #                                                                                                                                      'port1': port1,
-        #
-        #                                                                                                                                      'port2': port2}
         if r:
             cons.append(c)
             update_data()
@@ -610,6 +610,102 @@ def set_team_name():
 
 def set_factory_name():
     pass
+
+def add_res(current_team, args):
+
+    if args!='':
+        s=args.rfind(' ')
+        resource=args[:s]
+        amount=args[s+1:]
+        if not amount.isdigit():
+            return {'success': False, 'error': 'Неверный аргумент'}
+        r=current_team.add_res(resource, int(amount))
+        update_data()
+
+        if r['success']:
+            return {'success': True}
+        else:
+            return {'success': False, 'error': r['error']}
+    else:
+        resource=input('Какой тип ресурсов необходимо прибавить?: ')
+        amount=input('На сколько?: ')
+        if not amount.isdigit():
+            return {'success': False, 'error': 'Неверный аргумент'}
+        r = current_team.add_res(resource, int(amount))
+        update_data()
+        if r['success']:
+            return {'success': True}
+        else:
+            return {'success': False, 'error': r['error']}
+
+
+def set_res(current_team, args):
+    if args != '':
+        s = args.rfind(' ')
+        resource = args[:s]
+        amount = args[s + 1:]
+        if not amount.isdigit():
+            return {'success': False, 'error': 'Неверный аргумент'}
+        r = current_team.set_res(resource, int(amount))
+
+        if r['success']:
+            return {'success': True}
+        else:
+            return {'success': False, 'error': r['error']}
+    else:
+        resource = input('Какой тип ресурсов необходимо установить?: ')
+        amount = input('Сколько?: ')
+        if not amount.isdigit():
+            return {'success': False, 'error': 'Неверный аргумент'}
+        r = current_team.add_res(resource, int(amount))
+
+        if r['success']:
+            return {'success': True}
+        else:
+            return {'success': False, 'error': r['error']}
+
+
+
+def set_mode(current_factory):
+    b=current_factory.builds
+    droids=[]
+    s=1
+    for i in b:
+        if i.type=='Станция дроидов':
+            print(f'{s}. {i.title} ({i.type})')
+            droids.append(i)
+            s+=1
+    n= int(input('Введите номер постройки: '))
+    build = droids[n-1]
+    build.profit={}
+    print('1. accept')
+    print('2. donor')
+    n=int(input('Выберите режим: '))
+    if n==1:
+        build.mode='accept'
+    if n==2:
+        build.mode='donor'
+    current_factory.team.update()
+    update_data()
+    return {'success': True}
+
+def set_profit(current_factory):
+    b = current_factory.builds
+    droids = []
+    s = 1
+    for i in b:
+        if i.type == 'Станция дроидов':
+            print(f'{s}. {i.title} ({i.type})')
+            droids.append(i)
+            s += 1
+    n = int(input('Введите номер постройки: '))
+    build = droids[n - 1]
+    res = build.set_profit()
+    update_data()
+    if res['success']:
+        return {'success': True}
+    else:
+        return {'success': False, 'error': res['error']}
 
 
 def parse_commands(text):
@@ -727,6 +823,35 @@ def main():
                     print('Произошла ошибка')
             elif command=='/update':
                 current_team.update()
+
+            elif command=='/add_res':
+                res=add_res(current_team, args)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
+            elif command=='/set_res':
+                res=set_res(current_team, args)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
+            elif command == '/set_mode':
+                res = set_mode(current_factory)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
+            elif command == '/set_profit':
+                res = set_profit(current_factory)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
 
 
 
