@@ -43,7 +43,7 @@ class Drill_I(Build):
         self.max_connections_in = 0
         self.max_connections_out = 1
         self.recipes = [-1, 77, 78, 81, 90, 91, 92]
-        self.price = {'Железная пластина': 3, 'Медная проволока': 1, 'Шестерни': 1}
+        #self.price = {'Железная пластина': 3, 'Медная проволока': 1, 'Шестерни': 1}
 
 class Smelter_I(Build):
     def __init__(self, factory=None):
@@ -54,7 +54,7 @@ class Smelter_I(Build):
         self.max_connections_in = 1
         self.max_connections_out = 1
         self.recipes = [-1, 5, 6, 11, 16, 55, 56]
-        self.price = {'Железный корпус': 10, 'Цемент': 5}
+        #self.price = {'Железный корпус': 10, 'Цемент': 5}
 
 class Bridge(Build):
     def __init__(self, factory=None):
@@ -208,7 +208,7 @@ class Pump(Build):
         self.max_connections_in = 0
         self.max_connections_out = 1
         self.recipes = [-1, 83]
-        self.price = {'Железный корпус': 3, 'Мотор': 1}
+        #self.price = {'Железный корпус': 3, 'Мотор': 1}
 
 class CementMill(Build):
     def __init__(self, factory=None):
@@ -384,7 +384,7 @@ class DroidStation(Build):
         self.max_connections_in = 1
         self.max_connections_out = 1
         self.recipes = [-1]
-        self.price = {'Пластмассовый корпус': 5, 'Аккумулятор': 2}
+        #self.price = {'Пластмассовый корпус': 5, 'Аккумулятор': 2}
         self.mode = 'accept'
         self.profit={}
         self.current_energy_profit=-10
@@ -396,10 +396,23 @@ class DroidStation(Build):
             else:
                 self.profit={}
         else:
-            if self.is_energy_connected:
-                self.out={'output1': self.profit, 'output2': {}}
-            else:
-                self.out={'output1': {}, 'output2': {} }
+            if self.profit != {}:
+                k = list(self.profit.keys())[0]
+                if self.is_energy_connected:
+
+                    if self.factory.team.droids_profit[k]>=0:
+                        self.out={'output1': self.profit, 'output2': {}}
+                    else:
+                        print(f'Недостаточно ресурсов на станции дроидов {self.title} фабрики {self.factory.title}! Производство остановлено')
+                        self.is_energy_connected=False
+                        return self.update_res()
+                else:
+                    if self.factory.team.droids_profit[k]-self.profit[k]>=0:
+                        print('Подача ресурсов восстановлена!')
+                        self.is_energy_connected=True
+                        return self.update_res()
+                    else:
+                        self.out={'output1': {}, 'output2': {} }
 
             if self.connection_out1 is not None:
                 self.connection_out1.add_res()
@@ -442,7 +455,7 @@ class GasExtractor(Build):
         self.max_connections_in = 0
         self.max_connections_out = 1
         self.recipes = [-1, 85, 87]
-        self.price = {'Железный корпус': 5, 'Набор труб': 3, 'Мотор': 1}
+        #self.price = {'Железный корпус': 5, 'Набор труб': 3, 'Мотор': 1}
 
 
 class RadioStation_III(Build):
@@ -499,8 +512,8 @@ class FusionReactor(Build):
         self.max_connections_in = 2  # тритий + вода
         self.max_connections_out = 1
         self.recipes = [-1, 101]
-        self.price = {'Высокотехнологичная обшивка': 40, 'Сверхпроводящий сплав': 10,
-                      'Квантовый чип': 5, 'Тритий': 10}
+        #self.price = {'Высокотехнологичная обшивка': 40, 'Сверхпроводящий сплав': 10,
+        #              'Квантовый чип': 5, 'Тритий': 10}
 
 class ThermalGenerator(Build):
     def __init__(self, factory=None):

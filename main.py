@@ -4,6 +4,7 @@ import json
 world=World()
 from matplotlib.pyplot import show
 from networkx import DiGraph, draw
+import datetime
 
 
 cons=[]
@@ -16,7 +17,7 @@ data={'difficulty': world.difficulty, 'teams': {}}
 def load_data():
     global data, current_team, current_factory
     try:
-        with open('data.json', 'r') as f:
+        with open('datas/data.json', 'r') as f:
             data=json.load(f)
             f.close()
 
@@ -28,7 +29,14 @@ def load_data():
                 team.is_energy_active=value['is_energy_active']
                 team.produce=value['produce']
                 team.factories_names=value['factories_names']
-
+                team.drin=value['drin']
+                team.drin_resources=value['drin_resources']
+                team.players=value['players']
+                team.grabbed_resources=value['grabbed_resources']
+                cur_players={}
+                for k, v in value['players'].items():
+                    cur_players[int(k)]=v
+                team.players=cur_players
                 for factories_name, value1 in value['factories'].items():
                     factory = Factory(title=factories_name, team=team)
                     factory.profit=value1['profit']
@@ -56,6 +64,9 @@ def load_data():
                         b.out=value3['out']
                         b.recipes=value3['recipes']
                         b.recipe_id=value3['recipe_id']
+                        if b.type=='Станция дроидов':
+                            b.profit=value3['profit']
+                            b.mode=value3['mode']
                         b.update_res()
                         factory.builds.append(b)
                     print(value1)
@@ -95,7 +106,7 @@ def load_data():
 
         print('Данные успешно загружены!')
     except Exception as e:
-        with open('data.json', 'w') as f:
+        with open('datas/data.json', 'w') as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
             f.close()
         print('Файл с данными не обнаружен или повреждён', e)
@@ -175,6 +186,7 @@ def _connection_to_dict(c):
     }
 
 
+
 def _factory_to_dict(factory):
     builds_dict = {b.title: _build_to_dict(b) for b in factory.builds}
 
@@ -212,6 +224,10 @@ def _team_to_dict(team):
         'produce': team.produce,
         'factories_names': team.factories_names,
         'droids_profit': team.droids_profit,
+        'players': team.players,
+        'drin': team.drin,
+        'drin_resources': team.drin_resources,
+        'grabbed_resources': team.grabbed_resources,
     }
 
 
@@ -227,7 +243,10 @@ def update_data(current_team='', current_factory=''):
         'current_team': current_team,
         'current_factory': current_factory,
     }
-    with open('data.json', 'w', encoding='utf-8') as f:
+    with open(f'datas/data{datetime.datetime.now()}.json.back', 'w') as f:
+        json.dump(data, f, indent=4)
+    f.close()
+    with open('datas/data.json', 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
 def add_team(title):
@@ -298,7 +317,7 @@ def set_current_factory(current_team: Team):
         f=int(input('Введите номер фабрики: '))
         fc=factories[f-1]
         print('Фабрика успешно выбрана')
-        update_data(current_team=fc.title)
+        update_data(current_factory=fc.title)
         return {'success': True, 'result': fc}
     except Exception as e:
         print('Введён неверный номер')
@@ -408,6 +427,13 @@ def info(current_team: Team):
     print(f'produce: {current_team.produce}')
     print(f'factories_names: {current_team.factories_names}')
     print(f'droids_profit: {current_team.droids_profit}')
+    print(f'drin: {current_team.drin}')
+    print(f'drin_resources: {current_team.drin_resources}')
+    print(f'grabbed_resources: {current_team.grabbed_resources}')
+    print(f'players: {current_team.players}')
+    print()
+
+
 
     tabs+=1
     print('Factories')
@@ -657,7 +683,7 @@ def set_res(current_team, args):
         amount = input('Сколько?: ')
         if not amount.isdigit():
             return {'success': False, 'error': 'Неверный аргумент'}
-        r = current_team.add_res(resource, int(amount))
+        r = current_team.set_res(resource, int(amount))
 
         if r['success']:
             return {'success': True}
@@ -706,6 +732,185 @@ def set_profit(current_factory):
         return {'success': True}
     else:
         return {'success': False, 'error': res['error']}
+
+
+def add_player(current_team):
+    id=len(list(current_team.players))
+    inventory=[]
+    nickname=input('Введите имя: ')
+    card_id=0
+    print('Приложите карту:')
+    player={
+        'id': id,
+        'nickname': nickname,
+        'inventory': inventory,
+        'card_id': card_id,
+        'advanced_recipes': []
+
+    }
+    current_team.players[id] = player
+    update_data()
+    return {'success': True}
+
+def inventory(current_team):
+    res = set_player(current_team)
+    if res['success'] == False:
+        return res
+    else:
+        player=res['result']
+
+        print('Какое действие хотите сделать с инвентарём?')
+        print('1. Взять')
+        print('2. Положить')
+        print('3. Удалить')
+        print('4. Посмотреть')
+        n = input('Выберите действие: ')
+        if n in ['1', '2', '3', '4']:
+            if n=='1':
+                return _grab(current_team, player['id'])
+            elif n=='2':
+                return _add_inv(current_team, player['id'])
+            elif n=='3':
+                return _del_inv(current_team, player['id'])
+            else:
+                return _show_inventory(current_team, player['id'])
+        else:
+            return {'success': False, 'error': 'Неверный ввод'}
+
+def _grab(current_team, player_id):
+    player=current_team.players[player_id]
+    print(f'Инвентарь {player["nickname"]}:')
+    s=1
+    for item in player['inventory']:
+        print(f'{s}. {item}')
+        s+=1
+    objects=[]
+    print('Введите номера предметов, которые нужно взять')
+    print('(Введите не больше 3 номеров, завершите последовательность цифрой 0)')
+    n=int(input('Номер: '))
+    while n!=0 and len(objects)<3:
+        if n<0 or n> len(player['inventory']):
+            print('Нет такого предмета')
+        else:
+            objects.append(player['inventory'][n-1])
+        n = int(input('Номер: '))
+    if len(objects)==0:
+        return {'success': True}
+    print('Вот предметы, которые вы хотите взять. Всё верно? (Y/n)')
+    print(*objects)
+    ans=input()
+    if ans.lower()=='y':
+        for i in objects:
+            current_team.players[player_id]['inventory'].remove(i)
+            if player_id in current_team.grabbed_resources.keys():
+                current_team.grabbed_resources[player_id].append(i)
+            else:
+                current_team.grabbed_resources[player_id] = [i]
+        update_data()
+        return {'success': True}
+    else:
+        return _grab(current_team, player_id)
+
+def _add_inv(current_team, player_id):
+    obj=input('Предмет, который вы хотите положить в инвентарь: ')
+    if obj=='':
+        return {'success': False, 'error': 'Пустой объект'}
+    current_team.players[player_id]['inventory'].append(obj)
+    update_data()
+    return {'success': True}
+
+
+def _del_inv(current_team, player_id):
+    player=current_team.players[player_id]
+    print(f'Инвентарь {player["nickname"]}:')
+    s = 1
+    for item in player['inventory']:
+        print(f'{s}. {item}')
+        s+=1
+
+    print('Введите номер предмета, который нужно удалить')
+    n = int(input('Номер: '))
+    current_team.players[player_id]['inventory'].pop(n-1)
+    update_data()
+    return {'success': True}
+
+def _show_inventory(current_team, player_id):
+    player=current_team.players[player_id]
+    print(f'Инвентарь {player["nickname"]}:')
+    s = 1
+    for item in player['inventory']:
+        print(f'{s}. {item}')
+        s += 1
+    return {'success': True}
+
+
+def return_inv(current_team):
+    if current_team.grabbed_resources=={}:
+        print('Нечего возвращать')
+        return {'success': True}
+
+    ans=input('Все колонисты вернули свой инвентарь? (Y/n) ')
+    if ans.lower()=='y':
+        for k, v in current_team.grabbed_resources.items():
+            for i in v:
+                current_team.players[k]['inventory'].append(i)
+
+
+    else:
+        for k, v in current_team.grabbed_resources.items():
+            ans=input(f'Вернул ли {current_team.players[k]["nickname"]} все свои вещи? (Y/n) ')
+            if ans.lower()=='y':
+                for i in v:
+                    current_team.players[k]['inventory'].append(i)
+            else:
+                for i in v:
+                    ans = input(f'Вернул ли {current_team.players[k]["nickname"]} {i}? (Y/n) ')
+                    if ans.lower()=='y':
+                        for i in v:
+                            current_team.players[k]['inventory'].append(i)
+
+    current_team.grabbed_resources = {}
+    update_data()
+    return {'success': True}
+
+
+def set_drin(current_team):
+    drin = int(input(f'Введите значение ДРИН в % от 1 до 100 (текущее значение: {current_team.drin}) '))
+    if drin>100 or drin<1:
+        return {'success': False, 'error': 'Неверный ввод'}
+    current_team.drin = drin
+    res=current_team.update_drin_res()
+    if res['success']:
+        update_data()
+        return {'success': True}
+
+
+def craft(current_team):
+    res = set_player(current_team)
+    if res['success']==False:
+        return res
+    else:
+        player=res['result']
+        return current_team.craft(player['id'])
+
+
+
+def set_player(current_team):
+    print('Какой способ выбора колониста?')
+    print('1. По номеру')
+    print('2. По карте')
+    mode = input('Выберите способ: ')
+    if mode == '1':
+        players = []
+        print('Игроки:')
+        for k, v in current_team.players.items():
+            print(f'{k + 1}. {v["nickname"]}')
+            players.append(v)
+        n = input('Выберите колониста: ')
+        if n.isdigit() and int(n) > 0 and int(n) <= len(players):
+            return {'success': True, 'result':players[int(n) - 1]}
+        else:
+            return {'success': False, 'error': 'Неверный ввод'}
 
 
 def parse_commands(text):
@@ -851,6 +1056,43 @@ def main():
                     print('Успешно!')
                 else:
                     print(f'Произошла ошибка! {res["error"]}')
+
+            elif command=='/add_player':
+                res=add_player(current_team)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
+            elif command=='/inv':
+                res=inventory(current_team)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
+            elif command=='/return_inv':
+                res=return_inv(current_team)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
+
+            elif command=='/set_drin':
+                res=set_drin(current_team)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
+            elif command=='/craft':
+                res=craft(current_team)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
 
 
 

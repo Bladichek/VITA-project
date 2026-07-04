@@ -1,5 +1,5 @@
 from recipes import recipes
-
+from craft_recipes import craft_recipes
 
 resources=['Алюминиевый корпус',
            'Медная проволока',
@@ -130,9 +130,69 @@ class Team:
         self.produce = {}
         self.factories_names=[]
         self.droids_profit={}
+        self.drin = 0
+        self.drin_resources = {}
+        self.players={}
+        self.grabbed_resources = {}
 
     def add_factory(self, factory):
         self.factories.append(factory)
+
+    def update_drin_res(self):
+        res={}
+        for k, v in self.resources.items():
+            res[k]=round(v*self.drin/100)
+        self.drin_resources = res
+        return {'success': True}
+
+
+    def craft(self, player_id: int):
+
+
+        player_res={}
+        for k, v in self.drin_resources.items():
+            player_res[k] = player_res.get(k, 0)+v
+        for i in self.players[player_id]['inventory']:
+            player_res[i]=player_res.get(i, 0)+1
+
+
+        print('Крафты:')
+        rec=[]
+        s=1
+        for k, v in craft_recipes.items():
+            print(f'{s}. {v["object"]} ({v["resources"]})')
+            rec.append(v)
+            s+=1
+
+        n=int(input('Введите номер крафта: '))
+        cur_craft = rec[n-1]
+
+        price = cur_craft['resources']
+        f = True
+        ost = {}
+        for k, v in price.items():
+            if player_res.get(k, 0) < v:
+                f = False
+                ost[k] = v - player_res.get(k, 0)
+        if f == False:
+            print('Недостаточно ресурсов для крафта:')
+            for k, v in ost.items():
+                print(f'Не хватает {v} ресурса {k}')
+            print()
+            return {'success': False, 'error': 'Не хватает ресурсов'}
+
+        else:
+            for k, v in price.items():
+                if k in self.players[player_id]['inventory']:
+                    for i in range(v):
+                        self.players[player_id]['inventory'].remove(k)
+                elif k in self.drin_resources.keys():
+                    self.drin_resources[k]-=v
+                    self.resources[k]-=v
+            self.players[player_id]['inventory'].append(cur_craft['object'])
+            return {'success': True}
+
+
 
     def remove_factory(self):
         for i in range(len(self.factories)):
@@ -177,6 +237,7 @@ class Team:
                 for k, v in fac.profit.items():
                     self.produce[k]=self.produce.get(k, 0)+v
     def update_droids(self):
+        old_profit = self.droids_profit.copy()
         self.droids_profit = {}
         for fac in self.factories:
             for b in fac.builds:
@@ -184,10 +245,29 @@ class Team:
                     if b.profit != {}:
                         res = list(b.profit.keys())[0]
                         amount = list(b.profit.values())[0]
-                        if b.type == 'accept':
-                            self.droids_profit[res] = self.droids_profit.get(res, 0) + amount
+                        if b.mode == 'accept':
+                            self.droids_profit[res] = self.droids_profit.get(res, 0) + amount*b.is_energy_connected
                         else:
-                            self.droids_profit[res] = self.droids_profit.get(res, 0) + amount
+                            self.droids_profit[res] = self.droids_profit.get(res, 0) - amount*b.is_energy_connected
+        changes = self.change_profit(old_profit, self.droids_profit)
+        for fac in self.factories:
+            for b in fac.builds:
+                if b.type == 'Станция дроидов':
+                    f=False
+                    for i in changes:
+                        if i in list(b.profit.keys()):
+                            f=True
+                            break
+                    if f:
+                        if b.mode=='donor':
+                            b.update_res()
+    def change_profit(self, old_profit, new_profit):
+        changes=[]
+        for k, v in new_profit.items():
+            if v != old_profit.get(k, 0):
+                changes.append(k)
+        return changes
+
     def update_energy(self):
         energy = 0
         for fac in self.factories:
@@ -424,6 +504,8 @@ class Build:
             out1[k] = v * self.efficiency * self.is_energy_connected * self.factory.team.is_energy_active
         for k, v in recipes[self.recipe_id]['output2'].items():
             out2[k] = v * self.efficiency * self.is_energy_connected * self.factory.team.is_energy_active
+        if recipes[self.recipe_id]['output3']!={}:
+            self.current_energy_profit=recipes[self.recipe_id]['output3']['Энергия']*self.efficiency
         self.out['output1'] = out1
         self.out['output2'] = out2
         self.factory.team.update_energy()
@@ -471,12 +553,13 @@ class Connection:
         self.res = {}
 
 
-        self.input_build=None
-        self.output_build=None
+
         if input_build is not None:
             input_build.update_res()
         if output_build is not None:
             output_build.update_res()
+        self.input_build = None
+        self.output_build = None
 
 
 
