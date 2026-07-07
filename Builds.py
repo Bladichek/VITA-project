@@ -9,6 +9,7 @@ class HUB(Build):
         self.description = 'Хаб'
         self.default_energy_profit = 100
         self.max_health=float('inf')
+        self.health=self.max_health
         self.recipes = [0]
         self.recipe_id=0
 
@@ -21,7 +22,7 @@ class Builder_I(Build):
         self.max_connections_in = 1
         self.max_connections_out = 1
         self.recipes = [-1, 8, 9, 10, 14, 26, 27, 28, 29, 30, 31, 51, 57, 59]
-        self.price = {'Железная пластина': 5, 'Медная проволока': 2, 'Шестерни': 2}
+        self.price = {'Железная пластина': 5}
 
 class Assembler(Build):
     def __init__(self, factory=None):
@@ -32,7 +33,7 @@ class Assembler(Build):
         self.max_connections_in = 2
         self.max_connections_out = 1
         self.recipes = [-1, 15, 17, 18, 19, 32, 35, 36, 37, 38, 39, 40, 41, 42, 43, 45, 46, 48, 49, 50, 52, 53, 60, 61, 62, 63, 64, 65, 66, 67, 68, 70, 71, 72, 73, 74]
-        self.price = {'Железная пластина': 10, 'Медная проволока': 5}
+        self.price = {'Железная пластина': 10}
 
 class Drill_I(Build):
     def __init__(self, factory=None):
@@ -43,7 +44,7 @@ class Drill_I(Build):
         self.max_connections_in = 0
         self.max_connections_out = 1
         self.recipes = [-1, 77, 78, 81, 90, 91, 92]
-        #self.price = {'Железная пластина': 3, 'Медная проволока': 1, 'Шестерни': 1}
+        self.price = {'Железная пластина': 3, 'Медная проволока': 1}
 
 class Smelter_I(Build):
     def __init__(self, factory=None):
@@ -54,7 +55,7 @@ class Smelter_I(Build):
         self.max_connections_in = 1
         self.max_connections_out = 1
         self.recipes = [-1, 5, 6, 11, 16, 55, 56]
-        #self.price = {'Железный корпус': 10, 'Цемент': 5}
+        self.price = {'Железный корпус': 5, 'Цемент': 5}
 
 class Bridge(Build):
     def __init__(self, factory=None):
@@ -89,11 +90,11 @@ class RadioTower_I(Build):
         self.recipes = [-1]
         self.price = {'Железная пластина': 3, 'Медная проволока': 1}
 
-class Workbench_I(Build):
+class Workbench(Build):
     def __init__(self, factory=None):
         super().__init__(factory)
-        self.title = 'Верстак I'
-        self.type = 'Верстак I'
+        self.title = 'Верстак'
+        self.type = 'Верстак'
         self.description = 'Верстак первого уровня'
         self.max_connections_in = 2
         self.max_connections_out = 1
@@ -110,12 +111,13 @@ class AnimalRepeller(Build):
         self.max_connections_out = 0
         self.recipes = [-1]
         self.price = {'Железная пластина': 2, 'ЭМ катушка': 1}
+        self.level=2
 
-class Lumberjack_I(Build):
+class Lumberjack(Build):
     def __init__(self, factory=None):
         super().__init__(factory)
-        self.title = 'Лесорубка I'
-        self.type = 'Лесорубка I'
+        self.title = 'Лесорубка'
+        self.type = 'Лесорубка'
         self.description = 'Лесорубка первого уровня'
         self.max_connections_in = 0
         self.max_connections_out = 1
@@ -133,16 +135,26 @@ class Pier(Build):
         self.recipes = [-1]
         self.price = {'Древесина': 5, 'Железный корпус': 2}
 
-class StorageTerminal(Build):
+class Storage(Build):
     def __init__(self, factory=None):
-        super().__init__(factory)
-        self.title = 'Терминал хранилища'
-        self.type = 'Терминал хранилища'
-        self.description = 'Терминал хранилища'
-        self.max_connections_in = 0
-        self.max_connections_out = 0
-        self.recipes = [-1]
+        Build.__init__(self, factory)
+        self.title='Хранилище'
+        self.type='Хранилище'
+        self.description='Это хранилище'
+        self.max_connections_in = 1
+        self.default_energy_profit =0
+        self.recipes=[0]
+        self.recipe_id=0
+        self.out={}
         self.price = {'Железная пластина': 2}
+
+    def update_res(self):
+        if self.connection_in1 is not None:
+            self.out=self.connection_in1.res.copy()
+        else:
+            self.out={}
+        self.factory.team.update_produce()
+
 
 class SolarPanel(Build):
     def __init__(self, factory=None):
@@ -198,6 +210,7 @@ class Extractor(Build):
         self.max_connections_out = 1
         self.recipes = [-1, 84, 89]
         self.price = {'Железный корпус': 5, 'Набор труб': 2, 'Мотор': 1}
+        self.level = 2
 
 class Pump(Build):
     def __init__(self, factory=None):
@@ -208,7 +221,8 @@ class Pump(Build):
         self.max_connections_in = 0
         self.max_connections_out = 1
         self.recipes = [-1, 83]
-        #self.price = {'Железный корпус': 3, 'Мотор': 1}
+        self.price = {'Железный корпус': 3, 'Мотор': 1}
+        self.level=2
 
 class CementMill(Build):
     def __init__(self, factory=None):
@@ -231,6 +245,7 @@ class Builder_II(Build):
         self.max_connections_out = 1
         self.recipes = [-1, 1, 2, 4, 7, 33, 34, 44, 47, 58, 8, 9, 10, 14, 26, 27, 28, 29, 30, 31, 51, 57, 59]
         self.price = {'Железная пластина': 10, 'Медная проволока': 5, 'Алюминий': 3}
+        self.level = 2
 
 class Drill_II(Build):
     def __init__(self, factory=None):
@@ -242,6 +257,7 @@ class Drill_II(Build):
         self.max_connections_out = 1
         self.recipes = [-1, 79, 80, 86, 88, 93]
         self.price = {'Железная пластина': 5, 'Медная проволока': 2, 'Шестерни': 2, 'Железный корпус': 1}
+        self.level = 2
 
 class Foundry(Build):
     def __init__(self, factory=None):
@@ -253,6 +269,7 @@ class Foundry(Build):
         self.max_connections_out = 1
         self.recipes = [-1, 3, 12, 54]
         self.price = {'Железный корпус': 12, 'Цемент': 6}
+        self.level = 2
 
 class HydrocarbonConverter(Build):
     def __init__(self, factory=None):
@@ -264,6 +281,7 @@ class HydrocarbonConverter(Build):
         self.max_connections_out = 1
         self.recipes = [-1, 21, 22, 23, 24, 25]
         self.price = {'Железный корпус': 10, 'Мотор': 3}
+        self.level = 2
 
 class RadioTower_II(Build):
     def __init__(self, factory=None):
@@ -275,6 +293,7 @@ class RadioTower_II(Build):
         self.max_connections_out = 0
         self.recipes = [-1]
         self.price = {'Железная пластина': 5, 'Медная проволока': 3, 'Процессор': 1}
+        self.level = 2
 
 class Turret(Build):
     def __init__(self, factory=None):
@@ -286,6 +305,7 @@ class Turret(Build):
         self.max_connections_out = 0
         self.recipes = [-1]
         self.price = {'Железный корпус': 10, 'Болты': 5, 'Мотор': 2}
+        self.level = 2
 
 class Spotlight(Build):
     def __init__(self, factory=None):
@@ -297,6 +317,7 @@ class Spotlight(Build):
         self.max_connections_out = 0
         self.recipes = [-1]
         self.price = {'Стекло': 2, 'Железный корпус': 1}
+        self.level = 2
 
 class PlasmaTurret(Build):
     def __init__(self, factory=None):
@@ -308,6 +329,7 @@ class PlasmaTurret(Build):
         self.max_connections_out = 0
         self.recipes = [-1]
         self.price = {'Высокотехнологичная обшивка': 10, 'ЭМ стабилизатор плазмы': 2, 'Аккумулятор': 5}
+        self.level = 2
 
 class Railgun(Build):
     def __init__(self, factory=None):
@@ -319,6 +341,7 @@ class Railgun(Build):
         self.max_connections_out = 0
         self.recipes = [-1]
         self.price = {'Титановый корпус': 5, 'Магнит': 3, 'ЭМ катушка': 2}
+        self.level = 2
 
 class TransportHangar(Build):
     def __init__(self, factory=None):
@@ -330,6 +353,7 @@ class TransportHangar(Build):
         self.max_connections_out = 0
         self.recipes = [-1]
         self.price = {'Железный корпус': 20, 'Алюминиевый корпус': 5}
+        self.level = 2
 
 class RocketLauncher(Build):
     def __init__(self, factory=None):
@@ -341,6 +365,7 @@ class RocketLauncher(Build):
         self.max_connections_out = 0
         self.recipes = [-1]
         self.price = {'Железный корпус': 15, 'Двигатель': 5, 'Радиопередатчик': 3}
+        self.level = 2
 
 class NuclearReactor(Build):
     def __init__(self, factory=None):
@@ -352,17 +377,9 @@ class NuclearReactor(Build):
         self.max_connections_out = 1
         self.recipes = [-1, 100]
         self.price = {'Железный корпус': 20, 'Бетон': 10, 'Ядерная ячейка': 5, 'Модуль контроля температуры': 5}
+        self.level = 2
 
-class WasteSarcophagus(Build):
-    def __init__(self, factory=None):
-        super().__init__(factory)
-        self.title = 'Саркофаг отходов'
-        self.type = 'Саркофаг отходов'
-        self.description = 'Саркофаг отходов'
-        self.max_connections_in = 0
-        self.max_connections_out = 0
-        self.recipes = [-1]
-        self.price = {'Бетон': 15, 'Высокотехнологичная обшивка': 10, 'Стекло': 5}
+
 
 class DieselGenerator(Build):
     def __init__(self, factory=None):
@@ -374,6 +391,7 @@ class DieselGenerator(Build):
         self.max_connections_out = 1
         self.recipes = [-1, 99]
         self.price = {'Железный корпус': 10, 'Мотор': 5, 'Бочка': 3}
+        self.level = 2
 
 class DroidStation(Build):
     def __init__(self, factory=None):
@@ -384,10 +402,11 @@ class DroidStation(Build):
         self.max_connections_in = 1
         self.max_connections_out = 1
         self.recipes = [-1]
-        #self.price = {'Пластмассовый корпус': 5, 'Аккумулятор': 2}
+        self.price = {'Пластмассовый корпус': 5, 'Аккумулятор': 2}
         self.mode = 'accept'
         self.profit={}
         self.current_energy_profit=-10
+        self.level = 2
 
     def update_res(self):
         if self.mode=='accept':
@@ -455,19 +474,21 @@ class GasExtractor(Build):
         self.max_connections_in = 0
         self.max_connections_out = 1
         self.recipes = [-1, 85, 87]
-        #self.price = {'Железный корпус': 5, 'Набор труб': 3, 'Мотор': 1}
+        self.price = {'Железный корпус': 5, 'Набор труб': 3, 'Мотор': 1}
+        self.level = 2
 
 
-class RadioStation_III(Build):
+class RadioStation(Build):
     def __init__(self, factory=None):
         super().__init__(factory)
-        self.title = 'Радиостанция III'
-        self.type = 'Радиостанция III'
+        self.title = 'Радиостанция'
+        self.type = 'Радиостанция'
         self.description = 'Радиостанция третьего уровня'
         self.max_connections_in = 0
         self.max_connections_out = 0
         self.recipes = [-1]
         self.price = {'Железная пластина': 10, 'Медная проволока': 5, 'Процессор': 2, 'Радиопередатчик': 1}
+        self.level = 3
 
 class ParticleAccelerator(Build):
     def __init__(self, factory=None):
@@ -480,6 +501,7 @@ class ParticleAccelerator(Build):
         self.recipes = [-1, 69, 70, 75, 76]
         self.price = {'Высокотехнологичная обшивка': 30, 'Сверхпроводящий сплав': 10,
                       'Ядро ИИ': 5, 'ЭМ стабилизатор плазмы': 5}
+        self.level = 3
 
 class HighTempFurnace(Build):
     def __init__(self, factory=None):
@@ -491,7 +513,7 @@ class HighTempFurnace(Build):
         self.max_connections_out = 1
         self.recipes = [-1, 20]
         self.price = {'Железный корпус': 20, 'Цемент': 10, 'Иридий': 5}
-
+        self.level = 3
 class LandingPad(Build):
     def __init__(self, factory=None):
         super().__init__(factory)
@@ -502,6 +524,7 @@ class LandingPad(Build):
         self.max_connections_out = 0
         self.recipes = [-1]
         self.price = {'Бетон': 25, 'Алюминиевый корпус': 10}
+        self.level = 3
 
 class FusionReactor(Build):
     def __init__(self, factory=None):
@@ -512,8 +535,9 @@ class FusionReactor(Build):
         self.max_connections_in = 2  # тритий + вода
         self.max_connections_out = 1
         self.recipes = [-1, 101]
-        #self.price = {'Высокотехнологичная обшивка': 40, 'Сверхпроводящий сплав': 10,
-        #              'Квантовый чип': 5, 'Тритий': 10}
+        self.price = {'Высокотехнологичная обшивка': 40, 'Сверхпроводящий сплав': 10,
+                     'Квантовый чип': 5, 'Тритий': 10}
+        self.level = 3
 
 class ThermalGenerator(Build):
     def __init__(self, factory=None):
@@ -525,6 +549,7 @@ class ThermalGenerator(Build):
         self.max_connections_out = 1
         self.recipes = [-1, 102]
         self.price = {'Железный корпус': 15, 'Бетон': 10, 'Модуль контроля температуры': 1}
+        self.level = 3
 
 class AdvancedRocketLauncher(Build):
     def __init__(self, factory=None):
@@ -536,6 +561,7 @@ class AdvancedRocketLauncher(Build):
         self.max_connections_out = 0
         self.recipes = [-1]
         self.price = {'Титановый корпус': 20, 'Реактивный двигатель': 8, 'Контроллер ИИ роя': 5}
+        self.level = 3
 
 class ForceFieldGenerator(Build):
     def __init__(self, factory=None):
@@ -547,6 +573,7 @@ class ForceFieldGenerator(Build):
         self.max_connections_out = 0
         self.recipes = [-1]
         self.price = {'Высокотехнологичная обшивка': 25, 'ЭМ стабилизатор плазмы': 10, 'Аккумулятор': 5}
+        self.level = 3
 
 
 builds = [
@@ -559,11 +586,11 @@ builds = [
     Bridge,
     Wall,
     RadioTower_I,
-    Workbench_I,
+    Workbench,
     AnimalRepeller,
-    Lumberjack_I,
+    Lumberjack,
     Pier,
-    StorageTerminal,
+    Storage,
     SolarPanel,
     WindTurbine,
     WaterTurbine,
@@ -583,11 +610,10 @@ builds = [
     TransportHangar,
     RocketLauncher,
     NuclearReactor,
-    WasteSarcophagus,
     DieselGenerator,
     DroidStation,
     GasExtractor,
-    RadioStation_III,
+    RadioStation,
     ParticleAccelerator,
     HighTempFurnace,
     LandingPad,

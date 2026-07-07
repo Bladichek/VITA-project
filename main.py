@@ -11,16 +11,18 @@ cons=[]
 team_names=[]
 current_team=None
 current_factory=None
+current_player=None
 
 data={'difficulty': world.difficulty, 'teams': {}}
 
 def load_data():
-    global data, current_team, current_factory
+    global data, current_team, current_factory, current_player
     try:
         with open('datas/data.json', 'r') as f:
             data=json.load(f)
             f.close()
-
+            world.difficulty=data['difficulty']
+            world.day=data['day']
             for team_name, value in data['teams'].items():
                 team_names.append(team_name)
                 team = Team(title=team_name)
@@ -33,6 +35,7 @@ def load_data():
                 team.drin_resources=value['drin_resources']
                 team.players=value['players']
                 team.grabbed_resources=value['grabbed_resources']
+                team.level=value['level']
                 cur_players={}
                 for k, v in value['players'].items():
                     cur_players[int(k)]=v
@@ -47,6 +50,10 @@ def load_data():
                             h=float('inf')
                         else:
                             h=value3['max_health']
+                        if value3['health']==-1:
+                            h1=float('inf')
+                        else:
+                            h1=value3['health']
                         b=builds[value3['build_type']](factory)
                         b.price=value3['price']
                         b.destroy_price=value3['destroy_price']
@@ -56,7 +63,7 @@ def load_data():
                         b.max_connections_in=value3['max_connections_in']
                         b.max_connections_out=value3['max_connections_out']
                         b.max_health=h
-                        b.health=value3['health']
+                        b.health=h1
                         b.default_energy_profit=value3['default_energy_profit']
                         b.current_energy_profit=value3['current_energy_profit']
                         b.is_energy_connected=value3['is_energy_connected']
@@ -64,6 +71,8 @@ def load_data():
                         b.out=value3['out']
                         b.recipes=value3['recipes']
                         b.recipe_id=value3['recipe_id']
+                        b.level=value3['level']
+                        b.defence=value3['defence']
                         if b.type=='Станция дроидов':
                             b.profit=value3['profit']
                             b.mode=value3['mode']
@@ -98,6 +107,7 @@ def load_data():
                         current_factory=factory
                 if team.title==data['current_team']:
                     current_team=team
+
 
 
 
@@ -142,6 +152,8 @@ def _build_to_dict(b):
             'recipes': b.recipes,
             'mode': b.mode,
             'profit': b.profit,
+            'level': b.level,
+            'defence': b.defence,
         }
     return {
         'build_type': build_type,
@@ -160,6 +172,8 @@ def _build_to_dict(b):
         'efficiency': b.efficiency,
         'out': b.out,
         'recipes': b.recipes,
+        'level': b.level,
+        'defence': b.defence,
     }
 
 
@@ -228,6 +242,7 @@ def _team_to_dict(team):
         'drin': team.drin,
         'drin_resources': team.drin_resources,
         'grabbed_resources': team.grabbed_resources,
+        'level': team.level,
     }
 
 
@@ -242,6 +257,7 @@ def update_data(current_team='', current_factory=''):
         'teams': {team.title: _team_to_dict(team) for team in world.teams},
         'current_team': current_team,
         'current_factory': current_factory,
+        'day': world.day,
     }
     with open(f'datas/data{datetime.datetime.now()}.json.back', 'w') as f:
         json.dump(data, f, indent=4)
@@ -379,17 +395,21 @@ def build(current_factory: Factory, current_team: Team):
     try:
         print('Выберите постройку из списка:')
         build_names=[]
+
         for b in current_factory.builds:
+
             build_names.append(b.title)
 
-
+        bs=[]
         for build in builds:
             b=build()
-            print(f'{n}. {b.type}')
-            n+=1
+            if b.level<=current_factory.team.level:
+                print(f'{n}. {b.type}')
+                n+=1
+                bs.append(build)
 
         k=int(input('Введите номер постройки: '))
-        b=builds[k-1](current_factory)
+        b=bs[k-1](current_factory)
         title=input('Введите название постройки (необязательно): ')
         if title=='':
             title=b.type
@@ -455,12 +475,14 @@ def info(current_team: Team):
             print(f'\t' * tabs + f'max_connections_in: {build.max_connections_in}')
             print(f'\t' * tabs + f'max_connections_out: {build.max_connections_out}')
             print(f'\t' * tabs + f'max_health: {build.max_health}')
+            print(f'\t' * tabs + f'health: {build.health}')
             print(f'\t' * tabs + f'default_energy_profit: {build.default_energy_profit}')
             print(f'\t' * tabs + f'current_energy_profit: {build.current_energy_profit}')
             print(f'\t' * tabs + f'is_energy_connected: {build.is_energy_connected}')
             print(f'\t' * tabs + f'efficiency: {build.efficiency}')
             print(f'\t' * tabs + f'out: {build.out}')
             print(f'\t' * tabs + f'recipes: {build.recipes}')
+            print(f'\t' * tabs + f'level: {build.level}')
             if build.type=='Станция дроидов':
                 print(f'\t' * tabs + f'profit: {build.profit}')
                 print(f'\t' * tabs + f'mode: {build.mode}')
@@ -488,6 +510,8 @@ def set_recipe(current_factory: Factory):
         print('Доступные рецепты:')
         for i in b.recipes:
             if i == -1: continue
+            if i not in recipes_level[current_factory.team.level]:
+                continue
             recipe=recipes[i]
             in_a=''
             in_b=''
@@ -631,11 +655,25 @@ def destroy(current_factory):
         return {'success': False}
 
 
-def set_team_name():
-    pass
+def set_team_name(current_team, args):
+    if args!='':
+        if args in team_names:
+            return {'success': False, 'error': 'Команда с таким названием уже есть!'}
+        current_team.title=args
+        update_data()
+        return {'success': True}
+    else:
+        return {'success': False, 'error': 'Нет аргументов'}
 
-def set_factory_name():
-    pass
+def set_factory_name(current_factory, args):
+    if args!='':
+        if args in current_factory.team.factories_names:
+            return {'success': False, 'error': 'Фабрика с таким названием уже есть!'}
+        current_factory.title=args
+        update_data()
+        return {'success': True}
+    else:
+        return {'success': False, 'error': 'Нет аргументов'}
 
 def add_res(current_team, args):
 
@@ -745,37 +783,32 @@ def add_player(current_team):
         'nickname': nickname,
         'inventory': inventory,
         'card_id': card_id,
-        'advanced_recipes': []
+        'advanced_recipes': [],
+        'balance': 0,
 
     }
     current_team.players[id] = player
     update_data()
     return {'success': True}
 
-def inventory(current_team):
-    res = set_player(current_team)
-    if res['success'] == False:
-        return res
-    else:
-        player=res['result']
-
-        print('Какое действие хотите сделать с инвентарём?')
-        print('1. Взять')
-        print('2. Положить')
-        print('3. Удалить')
-        print('4. Посмотреть')
-        n = input('Выберите действие: ')
-        if n in ['1', '2', '3', '4']:
-            if n=='1':
-                return _grab(current_team, player['id'])
-            elif n=='2':
-                return _add_inv(current_team, player['id'])
-            elif n=='3':
-                return _del_inv(current_team, player['id'])
-            else:
-                return _show_inventory(current_team, player['id'])
+def inventory(current_team, player):
+    print('Какое действие хотите сделать с инвентарём?')
+    print('1. Взять')
+    print('2. Положить')
+    print('3. Удалить')
+    print('4. Посмотреть')
+    n = input('Выберите действие: ')
+    if n in ['1', '2', '3', '4']:
+        if n == '1':
+            return _grab(current_team, player['id'])
+        elif n == '2':
+            return _add_inv(current_team, player['id'])
+        elif n == '3':
+            return _del_inv(current_team, player['id'])
         else:
-            return {'success': False, 'error': 'Неверный ввод'}
+            return _show_inventory(current_team, player['id'])
+    else:
+        return {'success': False, 'error': 'Неверный ввод'}
 
 def _grab(current_team, player_id):
     player=current_team.players[player_id]
@@ -785,15 +818,22 @@ def _grab(current_team, player_id):
         print(f'{s}. {item}')
         s+=1
     objects=[]
+    numbers=[]
     print('Введите номера предметов, которые нужно взять')
     print('(Введите не больше 3 номеров, завершите последовательность цифрой 0)')
     n=int(input('Номер: '))
-    while n!=0 and len(objects)<3:
-        if n<0 or n> len(player['inventory']):
+    while n!=0:
+        numbers.append(n)
+        if n<0 or n > len(player['inventory']):
             print('Нет такого предмета')
         else:
             objects.append(player['inventory'][n-1])
-        n = int(input('Номер: '))
+            if len(objects)==3:
+                break
+        while n in numbers:
+            n = int(input('Номер: '))
+            if n in numbers:
+                print('Нельзя брать один и тот же предмет!')
     if len(objects)==0:
         return {'success': True}
     print('Вот предметы, которые вы хотите взять. Всё верно? (Y/n)')
@@ -866,8 +906,7 @@ def return_inv(current_team):
                 for i in v:
                     ans = input(f'Вернул ли {current_team.players[k]["nickname"]} {i}? (Y/n) ')
                     if ans.lower()=='y':
-                        for i in v:
-                            current_team.players[k]['inventory'].append(i)
+                        current_team.players[k]['inventory'].append(i)
 
     current_team.grabbed_resources = {}
     update_data()
@@ -885,13 +924,8 @@ def set_drin(current_team):
         return {'success': True}
 
 
-def craft(current_team):
-    res = set_player(current_team)
-    if res['success']==False:
-        return res
-    else:
-        player=res['result']
-        return current_team.craft(player['id'])
+def craft(current_team, player):
+    return current_team.craft(player['id'])
 
 
 
@@ -913,6 +947,162 @@ def set_player(current_team):
             return {'success': False, 'error': 'Неверный ввод'}
 
 
+def add_balance(current_team, player):
+    n=int(input('На сколько?: '))
+    player['balance']+=n
+    update_data()
+    return {'success': True}
+
+def buy(current_team, player):
+    res = current_team.buy(player)
+    if res['success']:
+        update_data()
+    return res
+
+def update_day():
+    res=world.update_day()
+    damaged=[]
+    destroyed=[]
+    if res['success']:
+        print(res['result'])
+        for team, v1 in res['result'].items():
+            for fac, v2 in v1.items():
+                for dam in v2['damaged_builds']:
+                    damaged.append({'name': dam[0].title,'health': dam[0].health, 'max_health': dam[0].max_health, 'type': dam[0].type, 'factory': fac, 'team': team, 'damage': dam[1]})
+                for des in v2['destroyed_builds']:
+                    destroyed.append({'name': des[0].title, 'health': des[0].health, 'max_health': des[0].max_health,  'type': des[0].type, 'factory': fac, 'team': team, 'damage': des[1]})
+
+    print('Повреждённые постройки:')
+    s=1
+    for i in damaged:
+        if i is None:
+            continue
+        print(f'{s}. {i["name"]} ({i["type"]}) - {i["health"]}/{i["max_health"]} (-{i["damage"]}) Команда: {i["team"]} Фабрика: ({i['factory']})')
+        s+=1
+    print()
+    print('Разрушенные постройки:')
+    s = 1
+    for i in destroyed:
+        if i is None:
+            continue
+        print(f'{s}. {i["name"]} ({i["type"]}) - {i["health"]}/{i["max_health"]} (-{i["damage"]}) Команда: {i["team"]} Фабрика: ({i['factory']})')
+        s += 1
+    update_data()
+    return {'success': True}
+
+def fix(current_team):
+    print('Починить всё?')
+    print('Общая стоимость:')
+    s=1
+    for k, v in current_team.fix_price().items():
+        print(f'{s}. {k}: {v}')
+        s+=1
+    ans=input('Починить? (Y/n): ')
+    if ans.lower() == 'n':
+        for fac in current_team.factories:
+            if fac.fix_price()=={}:
+                continue
+
+            print(f'Починить всё на фабрике {fac.title}?')
+            print('Общая стомость:')
+            s=1
+            for k, v in fac.fix_price().items():
+                print(f'{s}. {k}: {v}')
+                s += 1
+            ans = input('Починить? (Y/n): ')
+            if ans.lower() == 'n':
+                ans = input('Починить что-либо на этой фабрике? (Y/n): ')
+                if ans.lower() == 'n':
+                    continue
+                else:
+                    s=1
+                    builds=[]
+                    for b in fac.builds:
+                        if b.health==b.max_health:
+                            continue
+                        print(f'{s}. {b.title} ({b.health}/{b.max_health}) - {b.fix_price()}')
+                        s+=1
+                        builds.append(b)
+                    print('Вводите номера для починки (0 для выхода)')
+                    n=int(input('Номер: '))
+                    while n!=0:
+                        res=fac.fix_build(builds[n-1])
+                        if res['success']:
+                            print('Успешно!')
+                        else:
+                            print(res['result'])
+                        n = int(input('Номер: '))
+
+            else:
+                res=current_team.fix_factory(fac)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(res['result'])
+                update_data()
+                return {'success': True}
+        update_data()
+        return {'success': True}
+
+    else:
+        res=current_team.fix_all()
+        if res['success']:
+            update_data()
+            return {'success': True}
+        else:
+            update_data()
+            return {'success': False, 'error': res['result']}
+
+def res(current_team):
+    print('Ресурсы команды:')
+    for k, v in current_team.res().items():
+        if v!=0:
+            print(f'{k}: {v}')
+    return {'success': True}
+
+def set_difficulty():
+
+    n=input(f'Введите сложность (текущая: {world.difficulty}): ')
+    if n.isdigit() and int(n)>0:
+        world.difficulty=int(n)
+        update_data()
+        return {'success': True}
+    else:
+        return {'success': False, 'error': 'Неверный ввод'}
+
+
+def show_health(current_factory):
+    for b in current_factory.builds:
+        print(f'{b.title} ({b.health}/{b.max_health})')
+    return {'success': True}
+
+
+def set_build(current_factory):
+    builds=[]
+    s=1
+    for b in current_factory.builds:
+        print(f'{s}. {b.title} ({b.type})')
+        s+=1
+    n=input('Выберите здание: ')
+    if n.isdigit() and int(n)>0 and int(n)<len(current_factory.builds):
+        build=builds[int(n)-1]
+        print()
+        print(f'{b.title} ({b.type}) ({b.health}/{b.max_health})')
+        print(f'Текущий рецепт: {b.recipe_id}')
+        print(f'Подключено к сети: {b.is_energy_connected}')
+        print()
+        print('1. Отключить/подключить к сети')
+        print('2. Починить')
+        print('3. Установить рецепт')
+        print('4. Сменить название')
+        print('5. Разрушить')
+        print('6. Выход')
+        print()
+        n=input('Выберите действие: ')
+    else:
+        return {'success': False, 'error': 'Неверный ввод'}
+
+
 def parse_commands(text):
     parts = text.split(maxsplit=1)
     command = parts[0]
@@ -921,7 +1111,8 @@ def parse_commands(text):
 
 def main():
     load_data()
-    global current_factory, current_team
+
+    global current_factory, current_team, current_player
 
     while True:
 
@@ -1065,7 +1256,7 @@ def main():
                     print(f'Произошла ошибка! {res["error"]}')
 
             elif command=='/inv':
-                res=inventory(current_team)
+                res=inventory(current_team, current_player)
                 if res['success']:
                     print('Успешно!')
                 else:
@@ -1087,7 +1278,54 @@ def main():
                     print(f'Произошла ошибка! {res["error"]}')
 
             elif command=='/craft':
-                res=craft(current_team)
+                res=craft(current_team, current_player)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
+            elif command=='/set_team_name':
+                res=set_team_name(current_team, args)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
+            elif command=='/set_factory_name':
+                res=set_factory_name(current_factory, args)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
+            elif command=='/add_balance':
+                res=add_balance(current_team, current_player)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
+            elif command=='/buy':
+                res=buy(current_team, current_player)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
+            elif command=='/set_player':
+                res=set_player(current_team)
+                if res['success']:
+                    current_player=res['result']
+                    print('Успешно!')
+
+            elif command=='/update_day':
+                res=update_day()
+                if res['success']:
+                    print('Успешно!')
+
+
+            elif command=='/fix':
+                res=fix(current_team)
                 if res['success']:
                     print('Успешно!')
                 else:

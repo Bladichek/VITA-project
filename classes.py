@@ -1,6 +1,9 @@
-from recipes import recipes
-from craft_recipes import craft_recipes
-
+from recipes import recipes, recipes_level
+from craft_recipes import craft_recipes, craft_levels
+from prices import prices
+from math import erf, ceil
+from random import choice
+from numpy import random
 resources=['Алюминиевый корпус',
            'Медная проволока',
            'Камера сгорания',
@@ -98,6 +101,7 @@ class World:
     def __init__(self, difficulty: int=5):
         self.teams=[]
         self.difficulty = difficulty
+        self.day = 1
 
 
     def add_team(self, team):
@@ -117,7 +121,21 @@ class World:
         pass
 
     def update_day(self):
-        pass
+        result={}
+        self.day+=1
+        for team in self.teams:
+            res=team.hit(difficulty=self.difficulty)
+            if res['success']:
+                result[team.title]=res['result']
+
+        for team in self.teams:
+            for k, v in team.produce.items():
+                if k=='energy':
+                    continue
+                team.resources[k]=team.resources.get(k, 0)+v
+        return {'success': True, 'result': result}
+
+
 
 
 class Team:
@@ -134,9 +152,21 @@ class Team:
         self.drin_resources = {}
         self.players={}
         self.grabbed_resources = {}
+        self.level = 1
 
     def add_factory(self, factory):
         self.factories.append(factory)
+
+    def hit(self, difficulty: int):
+        result={}
+        for fac in self.factories:
+            res=fac.hit(difficulty)
+            if res['success']:
+                result[fac.title]=res['result']
+        self.update()
+        return {'success': True, 'result': result}
+
+
 
     def update_drin_res(self):
         res={}
@@ -159,7 +189,9 @@ class Team:
         print('Крафты:')
         rec=[]
         s=1
-        for k, v in craft_recipes.items():
+        player_recipes = [x  for x in craft_recipes.keys() if x in craft_levels[self.level]]+self.players[player_id]['advanced_recipes']
+        for k in player_recipes:
+            v = craft_recipes[k]
             print(f'{s}. {v["object"]} ({v["resources"]})')
             rec.append(v)
             s+=1
@@ -193,6 +225,32 @@ class Team:
             return {'success': True}
 
 
+    def buy(self, player):
+        s=1
+        print('Выберите покупку из списка:')
+        buys=[]
+        for k, v in prices.items():
+            print(f'{s}. {k} ({v["price"]} кредИТов)')
+            buys.append([k, v])
+            s+=1
+        n=input('Введите номер: ')
+        if (not n.isdigit()) or int(n)<1 or int(n)>len(buys):
+            return {'success': False, 'error': 'Неверный ввод'}
+        item=buys[int(n)-1]
+        if item[1]['price']>player['balance']:
+            return {'success': False, 'error': f'Не хватает {item[1]["price"]-player["balance"]} кредИТов'}
+        if item[1]['item']==None:
+            player['inventory'].append(item[0])
+            player['balance']-=item[1]['price']
+            return {'success': True}
+        else:
+            if item[1]['item'] in player['advanced_recipes']:
+                return {'success': False, 'error': ' Нельзя купить один и тот же чертёж больше 1 раза!'}
+            else:
+                player['advanced_recipes'].append(item[1]['item'])
+                return {'success': True}
+
+
 
     def remove_factory(self):
         for i in range(len(self.factories)):
@@ -220,22 +278,26 @@ class Team:
         for k, v in self.resources.items():
             print(f'{k}: {v}')
 
+    def update_produce(self):
+        self.produce = {}
+        for fac in self.factories:
+            fac.profit = {}
+            for b in fac.builds:
+                if b.type == 'Хранилище':
+                    for k, v in b.out.items():
+                        fac.profit[k] = fac.profit.get(k, 0) + v
+            for k, v in fac.profit.items():
+                self.produce[k] = self.produce.get(k, 0) + v
 
     def update(self):
         for _ in range(2):
-            self.produce={}
+            self.update_produce()
             self.update_droids()
             for fac in self.factories:
                 fac.profit={}
                 for b in fac.builds:
                     b.set_recipe(b.recipe_id)
-                    if b.type=='Хранилище':
-                        for k, v in b.out.items():
-                            fac.profit[k]=fac.profit.get(k, 0)+v
-
                 self.update_energy()
-                for k, v in fac.profit.items():
-                    self.produce[k]=self.produce.get(k, 0)+v
     def update_droids(self):
         old_profit = self.droids_profit.copy()
         self.droids_profit = {}
@@ -285,6 +347,31 @@ class Team:
             if self.is_energy_active==False:
                 print('Питание восстановлено!')
             self.is_energy_active=True
+    def fix_price(self):
+        res={}
+        for fac in self.factories:
+            for k, v in fac.fix_price().items():
+                if v == 0:
+                    continue
+                res[k] = res.get(k, 0) + v
+        return res
+
+    def fix_all(self):
+        r=compare_resources(self.fix_price(), self.resources)
+        if r['success']:
+            for fac in self.factories:
+                fac.fix_all()
+            return {'success': True}
+        else:
+            return {'success': False, 'result': f'Не хватает ресурсов: {r["ost"]}'}
+    def fix_factory(self, factory):
+        r=compare_resources(factory.fix_price(), self.resources)
+        if r['success']:
+            factory.fix_all()
+            return {'success': True}
+        else:
+            return {'success': False, 'result': f'Не хватает ресурсов: {r["ost"]}'}
+
 
 
 class Factory:
@@ -342,6 +429,73 @@ class Factory:
         self.team.update()
         return True
 
+    def hit(self, difficulty):
+        damaged_builds=[]
+        destroyed_builds=[]
+        count=random.normal(len(self.builds)/2, difficulty/10)
+        print('count', count)
+        count=min(len(self.builds), abs(count))
+
+        factory_protect=0
+        for b in self.builds:
+            factory_protect+=b.defence*b.is_energy_connected
+        for i in range(round(count)):
+            build=choice(self.builds)
+            while (build in destroyed_builds) or (build in damaged_builds):
+                build = choice(self.builds)
+            local_difficulty=round(random.normal(difficulty, (difficulty**1.5)/10)*(1-erf(factory_protect/100)))
+            print('local_diff', local_difficulty)
+            build.health=max(build.health-local_difficulty, 0)
+            if build.health == 0:
+                self.builds.remove(build)
+                for c in (build.connection_in1, build.connection_in2, build.connection_out1, build.connection_out2):
+                    if c is not None:
+                        c.remove_connection()
+                destroyed_builds.append([build, local_difficulty])
+            else:
+                damaged_builds.append([build, local_difficulty])
+
+        return {'success': True, 'result': {'damaged_builds': damaged_builds, 'destroyed_builds': destroyed_builds}}
+
+    def fix_price(self):
+        res={}
+        for b in self.builds:
+            for k, v in b.fix_price().items():
+                if v == 0:
+                    continue
+                res[k]=res.get(k, 0)+v
+        return res
+
+    def fix_all(self):
+        all_res={}
+        for build in self.builds:
+            res=build.fix_price()
+            for k, v in res.items():
+                all_res[k]=all_res.get(k, 0)+v
+        r=compare_resources(all_res, self.team.resources)
+        if r['success']:
+            for b in self.builds:
+                b.fix()
+            for k, v in all_res.items():
+                self.team.resources[k]-=v
+            return {'success': True}
+        else:
+            return {'success': False, 'result': f'Не хватает ресурсов: {r["ost"]}'}
+
+    def fix_build(self, build):
+        r=compare_resources(build.fix_price(), self.team.resources)
+        if r['success']:
+
+            for k, v in build.fix_price().items():
+                print(k, v)
+                self.team.resources[k] -= v
+            build.fix()
+            return {'success': True}
+        else:
+            return {'success': False, 'result': f'Не хватает ресурсов: {r["ost"]}'}
+
+
+
 
 
 
@@ -368,6 +522,8 @@ class Build:
         self.efficiency = 1
         self.out={'output1': {}, 'output2': {}}
         self.recipes=[-1]
+        self.level=1
+        self.defence = 0
 
     def add_connection_in(self, connection, number: int=1):
         if number==1:
@@ -520,6 +676,16 @@ class Build:
             self.connection_out2.output_build.update_res()
 
 
+    def fix_price(self):
+        res={}
+        coff=1-self.health/self.max_health
+        for k, v in self.price.items():
+            res[k]=ceil(v*coff)
+        return res
+
+    def fix(self):
+        self.health=self.max_health
+
 class Connection:
     def __init__(self):
         self.res = {}
@@ -580,7 +746,7 @@ class Node(Build):
     def __init__(self, factory=None):
         Build.__init__(self, factory=factory)
         self.price = {}
-        self.destroy_price = {}
+        self.destroy_price = {'Железная пластина': 2}
         self.title = ''
         self.type='Node'
         self.description = 'Узел позволяет создавать разветвления и объединения соединений'
@@ -690,6 +856,17 @@ class Node(Build):
 
 
 
+def compare_resources(price, current):
+    f = True
+    ost = {}
+    for k, v in price.items():
+        if current.get(k, 0) < v:
+            f = False
+            ost[k] = v - current.get(k, 0)
+    if f == False:
+        return {'success': False, 'ost': ost}
+    else:
+        return {'success': True}
 
 
 
