@@ -977,7 +977,7 @@ def update_day():
     for i in damaged:
         if i is None:
             continue
-        print(f'{s}. {i["name"]} ({i["type"]}) - {i["health"]}/{i["max_health"]} (-{i["damage"]}) Команда: {i["team"]} Фабрика: ({i['factory']})')
+        print(f'{s}. {i["name"]} ({i["type"]}) - {i["health"]}/{i["max_health"]} (-{i["damage"]}) Команда: {i["team"]} Фабрика: ({i["factory"]})')
         s+=1
     print()
     print('Разрушенные постройки:')
@@ -985,7 +985,7 @@ def update_day():
     for i in destroyed:
         if i is None:
             continue
-        print(f'{s}. {i["name"]} ({i["type"]}) - {i["health"]}/{i["max_health"]} (-{i["damage"]}) Команда: {i["team"]} Фабрика: ({i['factory']})')
+        print(f'{s}. {i["name"]} ({i["type"]}) - {i["health"]}/{i["max_health"]} (-{i["damage"]}) Команда: {i["team"]} Фабрика: ({i["factory"]})')
         s += 1
     update_data()
     return {'success': True}
@@ -1082,14 +1082,16 @@ def set_build(current_factory):
     s=1
     for b in current_factory.builds:
         print(f'{s}. {b.title} ({b.type})')
+        builds.append(b)
         s+=1
     n=input('Выберите здание: ')
-    if n.isdigit() and int(n)>0 and int(n)<len(current_factory.builds):
+    print([x.title for x in builds])
+    if n.isdigit() and int(n)>0 and int(n)<=len(current_factory.builds):
         build=builds[int(n)-1]
         print()
-        print(f'{b.title} ({b.type}) ({b.health}/{b.max_health})')
-        print(f'Текущий рецепт: {b.recipe_id}')
-        print(f'Подключено к сети: {b.is_energy_connected}')
+        print(f'{build.title} ({build.type}) ({build.health}/{build.max_health})')
+        print(f'Текущий рецепт: {build.recipe_id}')
+        print(f'Подключено к сети: {build.is_energy_connected}')
         print()
         print('1. Отключить/подключить к сети')
         print('2. Починить')
@@ -1099,8 +1101,74 @@ def set_build(current_factory):
         print('6. Выход')
         print()
         n=input('Выберите действие: ')
+        if n.isdigit() and int(n)>0 and int(n)<=6:
+            if n == '1':
+                res = _switch_energy(build)
+
+
+            elif n == '2':
+                f = current_factory.fix_build(build)
+                if f['success']:
+                    res=f
+                else:
+                    res={"success": False, 'error': f['result']}
+
+            elif n == '3':
+                r=input('Введите номер рецепта: ')
+                if r.isdigit():
+                    build.set_recipe(int(r))
+                    res = {'success': True}
+                else:
+                    res = {'success': False, 'error': 'Неверный ввод'}
+
+
+            elif n == '4':
+                res = _set_build_name(build)
+
+            elif n == '5':
+                res = current_factory.destroy_build(build, res=True)
+
+            else:
+                res = {'success': True}
+
+            current_factory.team.update()
+            update_data()
+            return res
+
+        else:
+            return {'success': False, 'error': 'Неверный ввод'}
     else:
         return {'success': False, 'error': 'Неверный ввод'}
+
+def _switch_energy(build):
+    if build.is_energy_connected==True:
+        build.is_energy_connected=False
+        print('Постройка отключена')
+    else:
+        build.is_energy_connected=True
+        print('Постройка подключена')
+    return {'success': True}
+
+
+def _set_build_name(b):
+    title = input('Введите название постройки: ')
+    if title == '':
+        return {'success': False, 'error': 'Пустое название!'}
+    build_names=[]
+    for build in b.factory.builds:
+        build_names.append(build.title)
+
+    if title not in build_names:
+        b.title = title
+    else:
+        counter = 1
+        while True:
+            new_title = f"{title} ({counter})"
+            if new_title not in build_names:
+                b.title = new_title
+                break
+            counter += 1
+    return {'success': True}
 
 
 def parse_commands(text):
@@ -1326,6 +1394,14 @@ def main():
 
             elif command=='/fix':
                 res=fix(current_team)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
+
+            elif command=='/set_build':
+                res=set_build(current_factory)
                 if res['success']:
                     print('Успешно!')
                 else:

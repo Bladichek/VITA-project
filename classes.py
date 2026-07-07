@@ -418,15 +418,8 @@ class Factory:
                 self.team.resources[k]=v
             else:
                 self.team.resources[k] += v
-        b=self.builds.pop(n - 1)
-        for c in (b.connection_in1, b.connection_in2, b.connection_out1, b.connection_out2):
-            if c is not None:
-                c.remove_connection()
-        print('Постройка успешно демонтирована!')
-        print('Ресурсов получено:')
-        for k, v in p.items():
-            print(f'Получено {v} ресурса {k}')
-        self.team.update()
+        b=self.builds[n-1]
+        self.destroy_build(b, res=True)
         return True
 
     def hit(self, difficulty):
@@ -447,15 +440,27 @@ class Factory:
             print('local_diff', local_difficulty)
             build.health=max(build.health-local_difficulty, 0)
             if build.health == 0:
-                self.builds.remove(build)
-                for c in (build.connection_in1, build.connection_in2, build.connection_out1, build.connection_out2):
-                    if c is not None:
-                        c.remove_connection()
+                self.destroy_build(build)
                 destroyed_builds.append([build, local_difficulty])
             else:
                 damaged_builds.append([build, local_difficulty])
 
         return {'success': True, 'result': {'damaged_builds': damaged_builds, 'destroyed_builds': destroyed_builds}}
+    def destroy_build(self, build, res=False):
+        self.builds.remove(build)
+        for c in (build.connection_in1, build.connection_in2, build.connection_out1, build.connection_out2):
+            if c is not None:
+                c.remove_connection()
+        if res:
+            print('Постройка успешно демонтирована!')
+            coff=build.health/build.max_health
+            print('Ресурсов получено:')
+            for k, v in build.destroy_price.items():
+                print(f'Получено {v} ресурса {k})')
+                self.team.resources[k]=self.team.resources.get(k, 0)+round(k*coff)
+            self.team.update()
+
+        return {'success': True}
 
     def fix_price(self):
         res={}
