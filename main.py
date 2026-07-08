@@ -1,6 +1,11 @@
 from classes import *
 from Builds import *
 import json
+from prettytable import PrettyTable
+import serial
+import serial.tools.list_ports
+from classes import Build
+
 world=World()
 from matplotlib.pyplot import show
 from networkx import DiGraph, draw
@@ -23,6 +28,8 @@ def load_data():
             f.close()
             world.difficulty=data['difficulty']
             world.day=data['day']
+            if data.get('device', '')=='':
+                print('RFID не подключен!')
             for team_name, value in data['teams'].items():
                 team_names.append(team_name)
                 team = Team(title=team_name)
@@ -36,6 +43,8 @@ def load_data():
                 team.players=value['players']
                 team.grabbed_resources=value['grabbed_resources']
                 team.level=value['level']
+                team.rockets=value['rockets']
+                team.launched_rockets=value['launched_rockets']
                 cur_players={}
                 for k, v in value['players'].items():
                     cur_players[int(k)]=v
@@ -243,6 +252,8 @@ def _team_to_dict(team):
         'drin_resources': team.drin_resources,
         'grabbed_resources': team.grabbed_resources,
         'level': team.level,
+        'rockets': team.rockets,
+        'launched_rockets': team.launched_rockets,
     }
 
 
@@ -258,6 +269,8 @@ def update_data(current_team='', current_factory=''):
         'current_team': current_team,
         'current_factory': current_factory,
         'day': world.day,
+        'device': data.get('device', '')
+
     }
     with open(f'datas/data{datetime.datetime.now()}.json.back', 'w') as f:
         json.dump(data, f, indent=4)
@@ -378,6 +391,12 @@ def remove_factory(current_team: Team):
             else:
                 print('Неверно введён ответ!')
                 return {'success': True}
+        dc=[]
+        for c in cons:
+            if c.input_build.factory==current_team.factories[f-1]:
+                dc.append(c)
+        for c in dc:
+            cons.remove(c)
         current_team.factories_names.remove(current_team.factories[f-1].title)
         current_team.factories.pop(f - 1)
         print('Фабрика успешно удалена!')
@@ -451,6 +470,9 @@ def info(current_team: Team):
     print(f'drin_resources: {current_team.drin_resources}')
     print(f'grabbed_resources: {current_team.grabbed_resources}')
     print(f'players: {current_team.players}')
+    print(f'level: {current_team.level}')
+    print(f'rockets: {current_team.rockets}')
+    print(f'launched_rockets: {current_team.launched_rockets}')
     print()
 
 
@@ -605,10 +627,19 @@ def add_connection(current_factory):
     # except Exception as e:
     #     return {'success': False, 'error': e}
 
+def show_graph(current_factory, args):
+    if args=='':
+        res=_show_simple_graph(current_factory)
+    elif args=='health':
+        res=_show_health_graph(current_factory)
+    elif args=='energy':
+        res=_show_energy_graph(current_factory)
+    else:
+        res = {'success': False, 'error': 'Неверный аргумент'}
+    return res
 
 
-
-def show_graph(current_factory):
+def _show_simple_graph(current_factory):
     nodes=[]
     edges=[]
 
@@ -627,6 +658,97 @@ def show_graph(current_factory):
 
     draw(graph, with_labels=True)
     show()
+    return {'success': True}
+
+
+def _show_health_graph(current_factory):
+    nodes = []
+    edges = []
+    colors=[]
+    for b in current_factory.builds:
+        nodes.append(f'{b.title} ({b.health}/{b.max_health})')
+        colors.append(_health_to_color(b))
+        if b.connection_out1 != None:
+            edges.append([b.title, b.connection_out1.output_build.title])
+        if b.connection_out2 != None:
+            edges.append([b.title, b.connection_out2.output_build.title])
+
+    graph = DiGraph(directrd=True)
+    for node in nodes:
+        graph.add_node(node)
+    for edge in edges:
+        graph.add_edge(edge[0], edge[1])
+
+    draw(graph, with_labels=True, node_color=colors)
+    show()
+    return {'success': True}
+
+def _show_energy_graph(current_factory):
+    nodes = []
+    edges = []
+    colors=[]
+    max_waste=0
+    max_produce=0
+    for b in current_factory.builds:
+        if b.current_energy_profit*b.is_energy_connected>0:
+            max_produce=max(max_produce, b.current_energy_profit*b.is_energy_connected)
+        elif b.current_energy_profit*b.is_energy_connected<0:
+            max_waste=max(max_waste, abs(b.current_energy_profit*b.is_energy_connected))
+    for b in current_factory.builds:
+        nodes.append(f'{b.title}')
+        colors.append(_energy_to_color(b, max_waste, max_produce))
+        if b.connection_out1 != None:
+            edges.append([b.title, b.connection_out1.output_build.title])
+        if b.connection_out2 != None:
+            edges.append([b.title, b.connection_out2.output_build.title])
+    graph = DiGraph(directrd=True)
+    for node in nodes:
+        graph.add_node(node)
+    for edge in edges:
+        graph.add_edge(edge[0], edge[1])
+
+    draw(graph, with_labels=True, node_color=colors)
+    show()
+    return {'success': True}
+
+
+def _health_to_color(build):
+    if build.health==float('inf'):
+        return '#0000ff'
+    coff=build.health/build.max_health
+    r=0
+    g=0
+    if coff==1:
+        return '#0000FF'
+    elif coff<=0.5:
+        r=255
+        g=round(coff/0.5*255)
+    else:
+        g=255
+        coff-=0.5
+        r=255-round(coff/0.5*255)
+    return f'#{hex(r)[2:].zfill(2)}{hex(g)[2:].zfill(2)}00'
+
+def _energy_to_color(build, max_waste, max_produce):
+
+    energy=build.current_energy_profit*build.is_energy_connected
+    r=0
+    g=0
+    b=0
+    if energy>0:
+        g=255
+        r=round((1-energy/max_produce)*255)
+        b=r
+    elif energy<0:
+        r=255
+        g=round((1-abs(energy)/max_waste)*255)
+        b=g
+    else:
+        r=100
+        g=100
+        b=100
+    return f'#{hex(r)[2:].zfill(2)}{hex(g)[2:].zfill(2)}{hex(b)[2:].zfill(2)}'
+
 
 
 def remove_connection(current_factory):
@@ -776,8 +898,15 @@ def add_player(current_team):
     id=len(list(current_team.players))
     inventory=[]
     nickname=input('Введите имя: ')
-    card_id=0
     print('Приложите карту:')
+    res = read_serial()
+    if res['success']==False:
+        return res
+    card_id=res['result']
+    for k, v in current_team.players.items():
+        if v['card_id']==card_id:
+            return {'success': False, 'error': 'Эта карта уже есть в базе!'}
+
     player={
         'id': id,
         'nickname': nickname,
@@ -945,6 +1074,23 @@ def set_player(current_team):
             return {'success': True, 'result':players[int(n) - 1]}
         else:
             return {'success': False, 'error': 'Неверный ввод'}
+    elif mode=='2':
+        print('Приложите карту:')
+        res=read_serial()
+        if res['success']==False:
+            return res
+        id=res['result']
+        player={}
+        for k, v in current_team.players.items():
+            if v['card_id']==id:
+                player=v
+                break
+        if player=={}:
+            return {'success': False, 'error': 'Такого игрока нет в базе'}
+        print(f'Игрок: {player["nickname"]}')
+        return {'success': True, 'result': player}
+    else:
+        return {'success': False, 'error': 'Неверный ввод'}
 
 
 def add_balance(current_team, player):
@@ -987,6 +1133,22 @@ def update_day():
             continue
         print(f'{s}. {i["name"]} ({i["type"]}) - {i["health"]}/{i["max_health"]} (-{i["damage"]}) Команда: {i["team"]} Фабрика: ({i["factory"]})')
         s += 1
+    print()
+    print()
+    print()
+    print('Запущенные ракеты:')
+    for team in world.teams:
+        print(f'Команда: {team.title}')
+        for index, rocket in enumerate(team.launched_rockets, start=1):
+            print(f'{index}. {rocket["rocket"]}')
+            print(f'Координаты: {rocket["coords"]}')
+            print(f'Груз: {rocket["cargo"]}')
+            print()
+        print()
+        print()
+        team.launched_rockets = []
+
+
     update_data()
     return {'success': True}
 
@@ -1053,15 +1215,14 @@ def fix(current_team):
             update_data()
             return {'success': False, 'error': res['result']}
 
-def res(current_team):
+def show_res(current_team):
     print('Ресурсы команды:')
-    for k, v in current_team.res().items():
+    for k, v in current_team.resources.items():
         if v!=0:
             print(f'{k}: {v}')
     return {'success': True}
 
 def set_difficulty():
-
     n=input(f'Введите сложность (текущая: {world.difficulty}): ')
     if n.isdigit() and int(n)>0:
         world.difficulty=int(n)
@@ -1092,27 +1253,25 @@ def set_build(current_factory):
         print(f'{build.title} ({build.type}) ({build.health}/{build.max_health})')
         print(f'Текущий рецепт: {build.recipe_id}')
         print(f'Подключено к сети: {build.is_energy_connected}')
+        print(f'Потребление энергии: {build.current_energy_profit}')
         print()
         print('1. Отключить/подключить к сети')
         print('2. Починить')
         print('3. Установить рецепт')
         print('4. Сменить название')
         print('5. Разрушить')
-        print('6. Выход')
+        print('0. Выход')
         print()
         n=input('Выберите действие: ')
-        if n.isdigit() and int(n)>0 and int(n)<=6:
+        if n.isdigit() and int(n)>=0 and int(n)<6:
             if n == '1':
                 res = _switch_energy(build)
-
-
             elif n == '2':
                 f = current_factory.fix_build(build)
                 if f['success']:
                     res=f
                 else:
                     res={"success": False, 'error': f['result']}
-
             elif n == '3':
                 r=input('Введите номер рецепта: ')
                 if r.isdigit():
@@ -1120,13 +1279,104 @@ def set_build(current_factory):
                     res = {'success': True}
                 else:
                     res = {'success': False, 'error': 'Неверный ввод'}
-
-
             elif n == '4':
                 res = _set_build_name(build)
 
             elif n == '5':
                 res = current_factory.destroy_build(build, res=True)
+            else:
+                res = {'success': True}
+
+            current_factory.team.update()
+            update_data()
+            return res
+
+        else:
+            return {'success': False, 'error': 'Неверный ввод'}
+    else:
+        return {'success': False, 'error': 'Неверный ввод'}
+
+
+
+def set_build_adm(current_factory):
+    builds=[]
+    s=1
+    for b in current_factory.builds:
+        print(f'{s}. {b.title} ({b.type})')
+        builds.append(b)
+        s+=1
+    n=input('Выберите здание: ')
+    print([x.title for x in builds])
+    if n.isdigit() and int(n)>0 and int(n)<=len(current_factory.builds):
+        build=builds[int(n)-1]
+        print()
+        print(f'{build.title} ({build.type}) ({build.health}/{build.max_health})')
+        print(f'Текущий рецепт: {build.recipe_id}')
+        print(f'Подключено к сети: {build.is_energy_connected}')
+        print(f'Потребление энергии: {build.current_energy_profit}')
+        print(f'default_energy_profit: {build.default_energy_profit}')
+        print(f'out: {build.out}')
+        if build.connection_in1 is not None:
+            print(f'connection_in1: {build.connection_in1.res}')
+        else:
+            print(f'connection_in1: None')
+
+        if build.connection_in2 is not None:
+            print(f'connection_in2: {build.connection_in2.res}')
+        else:
+            print(f'connection_in2: None')
+
+        if build.connection_out1 is not None:
+            print(f'connection_out1: {build.connection_out1.res}')
+        else:
+            print(f'connection_out1: None')
+
+        if build.connection_out2 is not None:
+            print(f'connection_out2: {build.connection_out2.res}')
+        else:
+            print(f'connection_out2: None')
+        print(f'efficiency: {build.efficiency}')
+        print(f'level: {build.level}')
+        print(f'defence: {build.defence}')
+        print(f'Фикспрайс: {build.fix_price()}')
+        print()
+        print('1. Отключить/подключить к сети')
+        print('2. Починить')
+        print('3. Установить рецепт')
+        print('4. Сменить название')
+        print('5. Разрушить')
+        print('6. Установить здоровье')
+        print('7. Установить максимальное здоровье')
+        print('0. Выход')
+        print()
+        n=input('Выберите действие: ')
+        if n.isdigit() and int(n)>=0 and int(n)<=7:
+            if n == '1':
+                res = _switch_energy(build)
+            elif n == '2':
+                f = build.fix()
+                if f['success']:
+                    res=f
+                else:
+                    res={"success": False, 'error': f['result']}
+            elif n == '3':
+                r=input('Введите номер рецепта: ')
+                if r.isdigit():
+                    build.set_recipe(int(r))
+                    res = {'success': True}
+                else:
+                    res = {'success': False, 'error': 'Неверный ввод'}
+            elif n == '4':
+                res = _set_build_name(build)
+
+            elif n == '5':
+                res = current_factory.destroy_build(build, res=True)
+
+            elif n == '6':
+                res = _set_health(build)
+
+            elif n == '7':
+                res = _set_max_health(build)
 
             else:
                 res = {'success': True}
@@ -1139,6 +1389,7 @@ def set_build(current_factory):
             return {'success': False, 'error': 'Неверный ввод'}
     else:
         return {'success': False, 'error': 'Неверный ввод'}
+
 
 def _switch_energy(build):
     if build.is_energy_connected==True:
@@ -1170,6 +1421,128 @@ def _set_build_name(b):
             counter += 1
     return {'success': True}
 
+def _set_health(build):
+    n= input('Введите прочность: ')
+    if n.isdigit() and int(n) > 0:
+        if int(n)>build.max_health:
+            return {'success': False, 'error': 'Здоровье не может быть выше максимального'}
+        build.health=int(n)
+        update_data()
+        return {'success': True}
+    return {'success': False, 'error': 'Неверный ввод'}
+
+def _set_max_health(build):
+    n= input('Введите максимальную прочность: ')
+    if n.isdigit() and int(n) > 0:
+        if int(n)<build.health:
+            return {'success': False, 'error': 'Максимальное здоровье не может быть меньше текущего'}
+        build.max_health=int(n)
+        update_data()
+        return {'success': True}
+    return {'success': False, 'error': 'Неверный ввод'}
+
+
+def energy(current_team):
+    res = current_team.get_energy()
+    if res['success']:
+        result=res['result']
+        all_in_all=result['all']
+        waste=result['waste']
+        produce=result['produce']
+        all_waste=result['all_waste']
+        all_produce=result['all_produce']
+        print(f'Энернии в запасе: {current_team.energy}')
+        print('В общем:')
+        t= PrettyTable(['№', 'Название', 'Производство'])
+        for index, fac in enumerate(all_in_all, start=1):
+            t.add_row([index, fac[0], fac[1]])
+        print(t)
+        print()
+        print('Только затраты:')
+        t=PrettyTable(['№', 'Название', 'Потребление', 'Доля от общего'])
+        for index, fac in enumerate(waste, start=1):
+            t.add_row([index, fac[0], fac[1], f'{round(fac[1]/all_waste*100)}%'])
+        print(t)
+        print()
+        print('Только производство:')
+        t = PrettyTable(['№', 'Название', 'Производство', 'Доля от общего'])
+        for index, fac in enumerate(produce, start=1):
+            t.add_row([index, fac[0], fac[1], f'{round(fac[1]/all_produce*100)}%'])
+        print(t)
+        print()
+        return {'success': True}
+    else:
+        return res
+
+def set_port():
+    ports = serial.tools.list_ports.comports()
+    names=[]
+    for index, port in enumerate(ports, 1):
+        print(f"{index}. Порт: {port.device}")
+        print(f"Описание: {port.description}")
+        print(f"Производитель: {port.manufacturer}")
+        print(f"VID:PID: {port.vid}:{port.pid}")
+        print("-" * 30)
+        names.append(port.device)
+    n=input('Выберите порт: ')
+    if n.isdigit() and int(n)>0 and int(n)<=len(names):
+        data['device']=names[int(n)-1]
+        update_data()
+        return {'success': True}
+    else:
+        return {'success': False, 'error': 'Неверный ввод'}
+
+
+def read_serial():
+    port=data.get('device', '')
+    if port=='':
+        return {'success': False, 'error': 'RFID не подключен!'}
+    ser = serial.Serial(port=port, baudrate=9600, timeout=1)
+    text = ''
+    n=1
+    while text == '' and n<=10:
+        line = ser.readline()
+        text = line.decode('utf-8').strip()
+        n+=1
+    ser.close()
+    if text!='':
+        return {'success': True, 'result': text}
+    else:
+        return {'success': False, 'error': 'Вышло время ожидания'}
+
+def craft_rocket(current_factory):
+    print('Выберите ракетную установку:')
+    builds=[]
+    s=1
+    for b in current_factory.builds:
+        if b.type in ['Ракетная установка']:
+            print(f'{s}. {b.title} ({b.type})')
+            builds.append(b)
+    n=input('Введите номер: ')
+    if n.isdigit() and int(n)>0 and int(n)<=len(builds):
+        res = builds[int(n)-1].craft_rocket()
+        if res['success']:
+            update_data()
+        return res
+    else:
+        return {'success': False, 'error': 'Неверный ввод'}
+
+def launch(current_factory):
+    print('Выберите ракетную установку:')
+    builds=[]
+    s=1
+    for b in current_factory.builds:
+        if b.type in ['Ракетная установка']:
+            print(f'{s}. {b.title} ({b.type})')
+            builds.append(b)
+    n=input('Введите номер: ')
+    if n.isdigit() and int(n)>0 and int(n)<=len(builds):
+        res = builds[int(n)-1].launch_rocket()
+        if res['success']:
+            update_data()
+        return res
+    else:
+        return {'success': False, 'error': 'Неверный ввод'}
 
 def parse_commands(text):
     parts = text.split(maxsplit=1)
@@ -1270,8 +1643,14 @@ def main():
                 else:
                     print(f'Произошла ошибка! {res["error"]}')
 
-            elif command=='/show':
-                show_graph(current_factory)
+
+            elif command == '/show':
+                res = show_graph(current_factory, args)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
 
             elif command=='/remove_connection':
                 res=remove_connection(current_factory)
@@ -1279,6 +1658,7 @@ def main():
                     print('Соединение успешно удалено')
                 else:
                     print(f'Произошла ошибка! {res["error"]}')
+
             elif command=='/destroy':
                 res=destroy(current_factory)
                 if res['success']:
@@ -1385,6 +1765,8 @@ def main():
                 if res['success']:
                     current_player=res['result']
                     print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
 
             elif command=='/update_day':
                 res=update_day()
@@ -1407,7 +1789,61 @@ def main():
                 else:
                     print(f'Произошла ошибка! {res["error"]}')
 
+            elif command=='/set_build_adm':
+                res=set_build_adm(current_factory)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
 
+            elif command=='/show_res':
+                res=show_res(current_team)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
+            elif command=='/set_difficulty':
+                res=set_difficulty()
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
+            elif command=='/show_health':
+                res=show_health(current_factory)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
+            elif command=='/energy':
+                res=energy(current_team)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
+            elif command=='/set_port':
+                res=set_port()
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
+            elif command=='/craft_rocket':
+                res=craft_rocket(current_factory)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
+            elif command=='/launch':
+                res=launch(current_factory)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
 
 
 

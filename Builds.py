@@ -1,4 +1,5 @@
-from classes import Build, Node, Team
+from classes import Build, Node, Team, compare_resources
+from recipes import rocket_level, rockets
 
 
 class HUB(Build):
@@ -366,6 +367,77 @@ class RocketLauncher(Build):
         self.recipes = [-1]
         self.price = {'Железный корпус': 15, 'Двигатель': 5, 'Радиопередатчик': 3}
         self.level = 2
+
+    def craft_rocket(self):
+        print('Доступные ракеты для производства:')
+        prices=[]
+        for index, n in enumerate(rocket_level[1], start=1):
+            print(f'{index}. {rockets[n]["name"]} ({rockets[n]["price"]})')
+            prices.append(rockets[n])
+        n=input('Введите номер: ')
+        if n.isdigit() and int(n)>0 and int(n)<=len(prices):
+            price=prices[int(n)-1]
+            res= compare_resources(price["price"], self.factory.team.resources)
+            if res['success']:
+                for k, v in price["price"].items():
+                    self.factory.team.resources[k]=self.factory.team.resources.get(k, 0)-v
+                self.factory.team.rockets.append(price["name"])
+                return {'success': True}
+            else:
+                return {'success': False, 'error': f'Не хватает ресурсов: {res["ost"]}'}
+        else:
+            return {'success': False, 'error': 'Неверный ввод'}
+
+    def launch_rocket(self):
+        print('Доступные ракеты:')
+        for index, rocket in enumerate(self.factory.team.rockets, start=1):
+            print(f'{index}. {rocket}')
+        n=input('Введите номер: ')
+        if n.isdigit() and int(n)>0 and int(n)<=len(self.factory.team.rockets):
+            rocket=self.factory.team.rockets[int(n)-1]
+            cargo={}
+            if rocket in ['Грузовая ракета', 'Грузовая ракета дальнего действия', 'Грузовая ракета сверхдальнего действия']:
+                print('Это грузовая ракета. В неё можно положить ресурсы.')
+                ans = input('Положить? (Y/n): ')
+                if ans.lower()=='y':
+                    print('Доступные ресурсы (выберите номер и количество):')
+                    resources=[]
+                    s=1
+                    for k, v in self.factory.team.resources.items():
+                        print(f'{s}. {k} - {v}')
+                        resources.append([k, v])
+                        s+=1
+                    pick=[]
+                    n=input('Введите номер (0 для выхода): ')
+                    while n != '0':
+                        if n.isdigit() and int(n)>0 and int(n)<=len(resources):
+                            if n not in pick:
+                                resource=resources[int(n)-1]
+                                print(f'Введите колтчество ресурса {resource[0]} (всего - {resource[1]})')
+                                r=input()
+                                if r.isdigit() and int(r)>=0 and int(r)<=resource[1]:
+                                    cargo[resource[0]]=int(r)
+                                    self.factory.team.resources[resource[0]]-=int(r)
+                                    pick.append(n)
+                                else:
+                                    print('Неверный ввод')
+                            else:
+                                print('Этот ресурс уже погружен!')
+                        else:
+                            print('Неверный ввод')
+                        n = input('Введите номер (0 для выхода): ')
+
+
+            coords=input('Введите координаты целевой точки: ')
+            self.factory.team.rockets.remove(rocket)
+            self.factory.team.launched_rockets.append({'rocket': rocket, 'cargo': cargo, 'coords': coords})
+            return {'success': True}
+
+
+
+        else:
+            return {'success': False, 'error': 'Неверный ввод'}
+
 
 class NuclearReactor(Build):
     def __init__(self, factory=None):

@@ -133,6 +133,7 @@ class World:
                 if k=='energy':
                     continue
                 team.resources[k]=team.resources.get(k, 0)+v
+            team.update_drin_res()
         return {'success': True, 'result': result}
 
 
@@ -153,6 +154,8 @@ class Team:
         self.players={}
         self.grabbed_resources = {}
         self.level = 1
+        self.rockets=[]
+        self.launched_rockets=[]
 
     def add_factory(self, factory):
         self.factories.append(factory)
@@ -373,6 +376,38 @@ class Team:
             return {'success': False, 'result': f'Не хватает ресурсов: {r["ost"]}'}
 
 
+    def get_energy(self):
+        all_in_all=[]
+        waste=[]
+        produce=[]
+        all_waste=0
+        all_produce=0
+
+        for fac in self.factories:
+            all_in_all.append([fac.title, fac.profit['energy']])
+            fac_waste=0
+            fac_produce=0
+            for b in fac.builds:
+                if b.is_energy_connected*b.current_energy_profit>0:
+                    fac_produce+=b.is_energy_connected*b.current_energy_profit
+                else:
+                    fac_waste+=abs(b.is_energy_connected*b.current_energy_profit)
+            waste.append([fac.title, fac_waste])
+            produce.append([fac.title, fac_produce])
+            all_waste+=fac_waste
+            all_produce+=fac_produce
+        all_in_all.sort(key=lambda x: -x[1])
+        waste.sort(key=lambda x: -x[1])
+        produce.sort(key=lambda x: -x[1])
+        return {'success': True, 'result':
+            {'all': all_in_all,
+             'waste': waste,
+             'produce': produce,
+             'all_waste': all_waste,
+             'all_produce': all_produce}}
+
+
+
 
 class Factory:
     def __init__(self, team, title: str='factory'):
@@ -434,7 +469,7 @@ class Factory:
             factory_protect+=b.defence*b.is_energy_connected
         for i in range(round(count)):
             build=choice(self.builds)
-            while (build in destroyed_builds) or (build in damaged_builds):
+            while (build in [x[0] for x in destroyed_builds]) or (build in [x[0] for x in damaged_builds]):
                 build = choice(self.builds)
             local_difficulty=round(random.normal(difficulty, (difficulty**1.5)/10)*(1-erf(factory_protect/100)))
             print('local_diff', local_difficulty)
@@ -457,7 +492,7 @@ class Factory:
             print('Ресурсов получено:')
             for k, v in build.destroy_price.items():
                 print(f'Получено {v} ресурса {k})')
-                self.team.resources[k]=self.team.resources.get(k, 0)+round(k*coff)
+                self.team.resources[k]=self.team.resources.get(k, 0)+round(v*coff)
             self.team.update()
 
         return {'success': True}
@@ -683,6 +718,8 @@ class Build:
 
     def fix_price(self):
         res={}
+        if self.health==float('inf'):
+            return res
         coff=1-self.health/self.max_health
         for k, v in self.price.items():
             res[k]=ceil(v*coff)
@@ -690,6 +727,7 @@ class Build:
 
     def fix(self):
         self.health=self.max_health
+        return {'success': True}
 
 class Connection:
     def __init__(self):
