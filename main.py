@@ -4,7 +4,7 @@ import json
 from prettytable import PrettyTable
 import serial
 import serial.tools.list_ports
-from classes import Build
+
 
 world=World()
 from matplotlib.pyplot import show
@@ -45,6 +45,8 @@ def load_data():
                 team.level=value['level']
                 team.rockets=value['rockets']
                 team.launched_rockets=value['launched_rockets']
+                team.transport=value['transport']
+                team.advanced_transport=value['advanced_transport']
                 cur_players={}
                 for k, v in value['players'].items():
                     cur_players[int(k)]=v
@@ -254,6 +256,8 @@ def _team_to_dict(team):
         'level': team.level,
         'rockets': team.rockets,
         'launched_rockets': team.launched_rockets,
+        'transport': team.transport,
+        'advanced_transport': team.advanced_transport
     }
 
 
@@ -1515,7 +1519,7 @@ def craft_rocket(current_factory):
     builds=[]
     s=1
     for b in current_factory.builds:
-        if b.type in ['Ракетная установка']:
+        if b.type in ['Ракетная установка', 'Улучшенная ракетная установка']:
             print(f'{s}. {b.title} ({b.type})')
             builds.append(b)
     n=input('Введите номер: ')
@@ -1532,7 +1536,7 @@ def launch(current_factory):
     builds=[]
     s=1
     for b in current_factory.builds:
-        if b.type in ['Ракетная установка']:
+        if b.type in ['Ракетная установка', 'Улучшенная ракетная установка']:
             print(f'{s}. {b.title} ({b.type})')
             builds.append(b)
     n=input('Введите номер: ')
@@ -1543,6 +1547,51 @@ def launch(current_factory):
         return res
     else:
         return {'success': False, 'error': 'Неверный ввод'}
+
+def craft_transport(current_factory):
+    print('Выберите транспортный ангар:')
+    builds=[]
+    s=1
+    for b in current_factory.builds:
+        if b.type in ['Транспортный ангар']:
+            print(f'{s}. {b.title} ({b.type})')
+            builds.append(b)
+    n=input('Введите номер: ')
+    if n.isdigit() and int(n)>0 and int(n)<=len(builds):
+        res = builds[int(n)-1].craft_transport()
+        if res['success']:
+            update_data()
+        return res
+    else:
+        return {'success': False, 'error': 'Неверный ввод'}
+
+
+
+def transport(current_team):
+    print('Информация о доступном транспорте:')
+    for index, v in enumerate(current_team.transport, start=1):
+        print(f'{index}. {v["title"]}')
+        print(v['description'])
+        print()
+    return {'success': True}
+
+def add_advanced_transport(current_team):
+    print('Выберите транспортный ангар:')
+    builds = []
+    s = 1
+    for b in current_factory.builds:
+        if b.type in ['Транспортный ангар']:
+            print(f'{s}. {b.title} ({b.type})')
+            builds.append(b)
+    n = input('Введите номер: ')
+    if n.isdigit() and int(n) > 0 and int(n) <= len(builds):
+        res = builds[int(n) - 1].add_advanced_transport()
+        if res['success']:
+            update_data()
+        return res
+    else:
+        return {'success': False, 'error': 'Неверный ввод'}
+
 
 def parse_commands(text):
     parts = text.split(maxsplit=1)
@@ -1845,7 +1894,26 @@ def main():
                 else:
                     print(f'Произошла ошибка! {res["error"]}')
 
+            elif command=='/craft_transport':
+                res=craft_transport(current_factory)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
 
+            elif command=='/transport':
+                res=transport(current_team)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
+
+            elif command=='/add_advanced_transport':
+                res=add_advanced_transport(current_team)
+                if res['success']:
+                    print('Успешно!')
+                else:
+                    print(f'Произошла ошибка! {res["error"]}')
 
 
 

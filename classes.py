@@ -156,6 +156,8 @@ class Team:
         self.level = 1
         self.rockets=[]
         self.launched_rockets=[]
+        self.transport=[]
+        self.advanced_transport=[]
 
     def add_factory(self, factory):
         self.factories.append(factory)
