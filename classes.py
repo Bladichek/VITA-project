@@ -1,100 +1,7 @@
-from recipes import recipes, recipes_level
-from craft_recipes import craft_recipes, craft_levels
-from prices import prices
+from recipes import recipes, recipes_level, craft_recipes, craft_levels, prices, resources, builds_data
 from math import erf, ceil
 from random import choice
 from numpy import random
-resources=['Алюминиевый корпус',
-           'Медная проволока',
-           'Камера сгорания',
-           'Урановая руда',
-           'Мотор',
-           'Золотая руда',
-           'Титановый корпус',
-           'Железный слиток',
-           'Эмалевое стекло',
-           'Печатная плата',
-           'Органика',
-           'Литиевый слиток',
-           'Залежи аметиста',
-           'Медная руда',
-           'Иридиевый слиток',
-           'ЭМ катушка',
-           'Резина',
-           'Алюминий',
-           'Топливо',
-           'Двигатель',
-           'Железная руда',
-           'Модуль контроля температуры',
-           'Бензол',
-           'Серебро',
-           'Уголь',
-           'Ядро ИИ',
-           'Нефть',
-           'Ионные ускорители',
-           'Аккумулятор',
-           'Иридий',
-           'Бочка',
-           'Полиметаллическая руда',
-           'Микросхема',
-           'Щебень',
-           'Песок',
-           'Универсальный механизм',
-           'Титан',
-           'Электромотор',
-           'Сенсор',
-           'Биореактор',
-           'Медный слиток',
-           'Мазут',
-           'Набор труб',
-           'Литиевая руда',
-           'Турбина',
-           'Индуктивный привод',
-           'Смазка',
-           'Глинозём',
-           'Оптоволоконный кабель',
-           'Пластмассовый корпус',
-           'Древесина',
-           'Многожильный провод',
-           'Радиопередатчик',
-           'Ядерная ячейка',
-           'Кремний',
-           'Процессор',
-           'Боксит',
-           'ЭМ стабилизатор плазмы',
-           'Бетон',
-           'Шестерни',
-           'Тритий',
-           'Ротор',
-           'Железный корпус',
-           'Остеклённая панель',
-           'Пластиковый контейнер',
-           'Сверхпроводящий сплав',
-           'Турбогенератор магнитного поля',
-           'Высокотехнологичная обшивка',
-           'Контроллер ИИ роя',
-           'Золотой слиток',
-           'Известняк',
-           'Магнит',
-           'Угольный брикет',
-           'Дисплей',
-           'Кварцевый кристалл',
-           'Квантовый чип',
-           'Метан',
-           'Пластик',
-           'Колебательный контур',
-           'Железная пластина',
-           'Эмаль',
-           'Болты',
-           'Радиатор',
-           'Вода',
-           'Серная кислота',
-           'Компьютерный чип',
-           'Цемент',
-           'Стекло',
-           'Золотая проволока',
-           'Энергия',
-           'Реактивный двигатель']
 
 
 class World:
@@ -449,12 +356,6 @@ class Factory:
         if n < 1 or n > len(self.builds):
             print('Неверно указанное значение, попробуйте снова')
             return False
-        p=self.builds[n-1].destroy_price
-        for k, v in p.items():
-            if k not in self.team.resources.keys():
-                self.team.resources[k]=v
-            else:
-                self.team.resources[k] += v
         b=self.builds[n-1]
         self.destroy_build(b, res=True)
         return True
@@ -493,7 +394,7 @@ class Factory:
             coff=build.health/build.max_health
             print('Ресурсов получено:')
             for k, v in build.destroy_price.items():
-                print(f'Получено {v} ресурса {k})')
+                print(f'Получено {round(v*coff)} ресурса {k})')
                 self.team.resources[k]=self.team.resources.get(k, 0)+round(v*coff)
             self.team.update()
 
@@ -643,9 +544,14 @@ class Build:
             self.is_energy_connected=True
         self.recipe_id=recipe_id
         self.update_res()
-        print('Рецепт успешно сменён')
 
     def update_res(self):
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         coff = [1]
         if self.recipe_id==-1:
             self.is_energy_connected=False

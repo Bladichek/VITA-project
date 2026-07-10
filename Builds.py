@@ -1,5 +1,5 @@
 from classes import Build, Node, Team, compare_resources
-from recipes import rocket_level, rockets, transport, transport_levels
+from recipes import rocket_level, rockets, transport, transport_levels, builds_data
 
 
 class HUB(Build):
@@ -7,11 +7,11 @@ class HUB(Build):
         Build.__init__(self, factory=factory)
         self.title = 'Хаб'
         self.type='Хаб'
-        self.description = 'Хаб'
-        self.default_energy_profit = 100
+        self.description = builds_data[self.type]['description']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.max_health=float('inf')
         self.health=self.max_health
-        self.recipes = [0]
+        self.recipes = builds_data[self.type]['recipes']
         self.recipe_id=0
 
 class Builder_I(Build):
@@ -19,99 +19,128 @@ class Builder_I(Build):
         super().__init__(factory)
         self.title = 'Сборщик I'
         self.type = 'Сборщик I'
-        self.description = 'Сборщик первого уровня'
         self.max_connections_in = 1
         self.max_connections_out = 1
-        self.recipes = [-1, 8, 9, 10, 14, 26, 27, 28, 29, 30, 31, 51, 57, 59]
-        self.price = {'Железная пластина': 5}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence=builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
 
 class Assembler(Build):
     def __init__(self, factory=None):
         super().__init__(factory)
         self.title = 'Ассемблер'
         self.type = 'Ассемблер'
-        self.description = 'Ассемблер'
         self.max_connections_in = 2
         self.max_connections_out = 1
-        self.recipes = [-1, 15, 17, 18, 19, 32, 35, 36, 37, 38, 39, 40, 41, 42, 43, 45, 46, 48, 49, 50, 52, 53, 60, 61, 62, 63, 64, 65, 66, 67, 68, 70, 71, 72, 73, 74]
-        self.price = {'Железная пластина': 10}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
 
 class Drill_I(Build):
     def __init__(self, factory=None):
         super().__init__(factory)
         self.title = 'Бур I'
         self.type = 'Бур I'
-        self.description = 'Бур первого уровня'
         self.max_connections_in = 0
         self.max_connections_out = 1
-        self.recipes = [-1, 77, 78, 81, 90, 91, 92]
-        self.price = {'Железная пластина': 3, 'Медная проволока': 1}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
 
 class Smelter_I(Build):
     def __init__(self, factory=None):
         super().__init__(factory)
         self.title = 'Плавильня I'
         self.type = 'Плавильня I'
-        self.description = 'Плавильня первого уровня'
         self.max_connections_in = 1
         self.max_connections_out = 1
-        self.recipes = [-1, 5, 6, 11, 16, 55, 56]
-        self.price = {'Железный корпус': 5, 'Цемент': 5}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
 
 class Bridge(Build):
     def __init__(self, factory=None):
         super().__init__(factory)
         self.title = 'Мост'
         self.type = 'Мост'
-        self.description = 'Мост'
         self.max_connections_in = 0
         self.max_connections_out = 0
-        self.recipes = [-1]
-        self.price = {'Железная пластина': 5, 'Бетон': 5}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
 
 class Wall(Build):
     def __init__(self, factory=None):
         super().__init__(factory)
         self.title = 'Стена'
         self.type = 'Стена'
-        self.description = 'Стена'
         self.max_connections_in = 0
         self.max_connections_out = 0
-        self.recipes = [-1]
-        self.price = {'Бетон': 10}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
 
 class RadioTower_I(Build):
     def __init__(self, factory=None):
         super().__init__(factory)
         self.title = 'Радиовышка I'
         self.type = 'Радиовышка I'
-        self.description = 'Радиовышка первого уровня'
         self.max_connections_in = 0
         self.max_connections_out = 0
-        self.recipes = [-1]
-        self.price = {'Железная пластина': 3, 'Медная проволока': 1}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
 
 class Workbench(Build):
     def __init__(self, factory=None):
         super().__init__(factory)
         self.title = 'Верстак'
         self.type = 'Верстак'
-        self.description = 'Верстак первого уровня'
         self.max_connections_in = 2
         self.max_connections_out = 1
         self.recipes = [-1]
         self.price = {'Железная пластина': 2, 'Древесина': 2}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
 
 class AnimalRepeller(Build):
     def __init__(self, factory=None):
         super().__init__(factory)
         self.title = 'Отпугиватель животных'
         self.type = 'Отпугиватель животных'
-        self.description = 'Отпугиватель животных'
         self.max_connections_in = 0
         self.max_connections_out = 0
-        self.recipes = [-1]
-        self.price = {'Железная пластина': 2, 'ЭМ катушка': 1}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level=2
 
 class Lumberjack(Build):
@@ -119,35 +148,43 @@ class Lumberjack(Build):
         super().__init__(factory)
         self.title = 'Лесорубка'
         self.type = 'Лесорубка'
-        self.description = 'Лесорубка первого уровня'
         self.max_connections_in = 0
         self.max_connections_out = 1
-        self.recipes = [-1, 82]
-        self.price = {'Железная пластина': 2, 'Шестерни': 1}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
 
 class Pier(Build):
     def __init__(self, factory=None):
         super().__init__(factory)
         self.title = 'Причал'
         self.type = 'Причал'
-        self.description = 'Причал'
         self.max_connections_in = 0
         self.max_connections_out = 0
-        self.recipes = [-1]
-        self.price = {'Древесина': 5, 'Железный корпус': 2}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
 
 class Storage(Build):
     def __init__(self, factory=None):
         Build.__init__(self, factory)
         self.title='Хранилище'
         self.type='Хранилище'
-        self.description='Это хранилище'
         self.max_connections_in = 1
-        self.default_energy_profit =0
-        self.recipes=[0]
         self.recipe_id=0
         self.out={}
-        self.price = {'Железная пластина': 2}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
 
     def update_res(self):
         if self.connection_in1 is not None:
@@ -162,55 +199,70 @@ class SolarPanel(Build):
         super().__init__(factory)
         self.title = 'Солнечная панель'
         self.type = 'Солнечная панель'
-        self.description = 'Солнечная панель'
         self.max_connections_in = 0
         self.max_connections_out = 1
-        self.recipes = [-1, 94]
-        self.price = {'Стекло': 5, 'Железная пластина': 1}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
 
 class WindTurbine(Build):
     def __init__(self, factory=None):
         super().__init__(factory)
         self.title = 'Ветрогенератор'
         self.type = 'Ветрогенератор'
-        self.description = 'Ветрогенератор'
         self.max_connections_in = 0
         self.max_connections_out = 1
-        self.recipes = [-1, 95]
-        self.price = {'Железная пластина': 10, 'Шестерни': 5}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
 
 class WaterTurbine(Build):
     def __init__(self, factory=None):
         super().__init__(factory)
         self.title = 'Водяная турбина'
         self.type = 'Водяная турбина'
-        self.description = 'Водяная турбина'
         self.max_connections_in = 0
         self.max_connections_out = 1
-        self.recipes = [-1, 96]
-        self.price = {'Железный корпус': 5, 'Шестерни': 5}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
 
 class CoalGenerator(Build):
     def __init__(self, factory=None):
         super().__init__(factory)
         self.title = 'Угольный генератор'
         self.type = 'Угольный генератор'
-        self.description = 'Угольный генератор'
         self.max_connections_in = 2
         self.max_connections_out = 1
-        self.recipes = [-1, 97, 98]
-        self.price = {'Железный корпус': 8, 'Шестерни': 4}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
 
 class Extractor(Build):
     def __init__(self, factory=None):
         super().__init__(factory)
         self.title = 'Экстрактор'
         self.type = 'Экстрактор'
-        self.description = 'Экстрактор'
         self.max_connections_in = 0
         self.max_connections_out = 1
-        self.recipes = [-1, 84, 89]
-        self.price = {'Железный корпус': 5, 'Набор труб': 2, 'Мотор': 1}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 2
 
 class Pump(Build):
@@ -218,11 +270,14 @@ class Pump(Build):
         super().__init__(factory)
         self.title = 'Помпа'
         self.type = 'Помпа'
-        self.description = 'Помпа'
         self.max_connections_in = 0
         self.max_connections_out = 1
-        self.recipes = [-1, 83]
-        self.price = {'Железный корпус': 3, 'Мотор': 1}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level=2
 
 class CementMill(Build):
@@ -230,22 +285,28 @@ class CementMill(Build):
         super().__init__(factory)
         self.title = 'Цементная мельница'
         self.type = 'Цементная мельница'
-        self.description = 'Цементная мельница'
         self.max_connections_in = 2
         self.max_connections_out = 1
-        self.recipes = [-1, 13]
-        self.price = {'Железный корпус': 8, 'Шестерни': 4}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
 
 class Builder_II(Build):
     def __init__(self, factory=None):
         super().__init__(factory)
         self.title = 'Сборщик II'
         self.type = 'Сборщик II'
-        self.description = 'Сборщик второго уровня'
         self.max_connections_in = 1
         self.max_connections_out = 1
-        self.recipes = [-1, 1, 2, 4, 7, 33, 34, 44, 47, 58, 8, 9, 10, 14, 26, 27, 28, 29, 30, 31, 51, 57, 59]
-        self.price = {'Железная пластина': 10, 'Медная проволока': 5, 'Алюминий': 3}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 2
 
 class Drill_II(Build):
@@ -253,11 +314,14 @@ class Drill_II(Build):
         super().__init__(factory)
         self.title = 'Бур II'
         self.type = 'Бур II'
-        self.description = 'Бур второго уровня'
         self.max_connections_in = 0
         self.max_connections_out = 1
-        self.recipes = [-1, 79, 80, 86, 88, 93]
-        self.price = {'Железная пластина': 5, 'Медная проволока': 2, 'Шестерни': 2, 'Железный корпус': 1}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 2
 
 class Foundry(Build):
@@ -265,11 +329,14 @@ class Foundry(Build):
         super().__init__(factory)
         self.title = 'Литейная'
         self.type = 'Литейная'
-        self.description = 'Литейная'
         self.max_connections_in = 2
         self.max_connections_out = 1
-        self.recipes = [-1, 3, 12, 54]
-        self.price = {'Железный корпус': 12, 'Цемент': 6}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 2
 
 class HydrocarbonConverter(Build):
@@ -277,11 +344,14 @@ class HydrocarbonConverter(Build):
         super().__init__(factory)
         self.title = 'Углеводородный преобразователь'
         self.type = 'Углеводородный преобразователь'
-        self.description = 'Углеводородный преобразователь'
         self.max_connections_in = 2
         self.max_connections_out = 1
-        self.recipes = [-1, 21, 22, 23, 24, 25]
-        self.price = {'Железный корпус': 10, 'Мотор': 3}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 2
 
 class RadioTower_II(Build):
@@ -289,11 +359,14 @@ class RadioTower_II(Build):
         super().__init__(factory)
         self.title = 'Радиовышка II'
         self.type = 'Радиовышка II'
-        self.description = 'Радиовышка второго уровня'
         self.max_connections_in = 0
         self.max_connections_out = 0
-        self.recipes = [-1]
-        self.price = {'Железная пластина': 5, 'Медная проволока': 3, 'Процессор': 1}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 2
 
 class Turret(Build):
@@ -301,11 +374,14 @@ class Turret(Build):
         super().__init__(factory)
         self.title = 'Турель'
         self.type = 'Турель'
-        self.description = 'Турель'
         self.max_connections_in = 0
         self.max_connections_out = 0
-        self.recipes = [-1]
-        self.price = {'Железный корпус': 10, 'Болты': 5, 'Мотор': 2}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 2
 
 class Spotlight(Build):
@@ -313,11 +389,14 @@ class Spotlight(Build):
         super().__init__(factory)
         self.title = 'Прожектор'
         self.type = 'Прожектор'
-        self.description = 'Прожектор'
         self.max_connections_in = 0
         self.max_connections_out = 0
-        self.recipes = [-1]
-        self.price = {'Стекло': 2, 'Железный корпус': 1}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 2
 
 class PlasmaTurret(Build):
@@ -325,11 +404,14 @@ class PlasmaTurret(Build):
         super().__init__(factory)
         self.title = 'Плазменная турель'
         self.type = 'Плазменная турель'
-        self.description = 'Плазменная турель'
         self.max_connections_in = 0
         self.max_connections_out = 0
-        self.recipes = [-1]
-        self.price = {'Высокотехнологичная обшивка': 10, 'ЭМ стабилизатор плазмы': 2, 'Аккумулятор': 5}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 2
 
 class Railgun(Build):
@@ -337,11 +419,14 @@ class Railgun(Build):
         super().__init__(factory)
         self.title = 'Рельсотронная пушка'
         self.type = 'Рельсотронная пушка'
-        self.description = 'Рельсотронная пушка'
         self.max_connections_in = 0
         self.max_connections_out = 0
-        self.recipes = [-1]
-        self.price = {'Титановый корпус': 5, 'Магнит': 3, 'ЭМ катушка': 2}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 2
 
 class TransportHangar(Build):
@@ -349,14 +434,19 @@ class TransportHangar(Build):
         super().__init__(factory)
         self.title = 'Транспортный ангар'
         self.type = 'Транспортный ангар'
-        self.description = 'Транспортный ангар'
         self.max_connections_in = 0
         self.max_connections_out = 0
-        self.recipes = [-1]
-        self.price = {'Железный корпус': 20, 'Алюминиевый корпус': 5}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 2
 
     def craft_transport(self):
+        if self.is_energy_connected==False:
+            return {'success': False, 'error': 'Постройка обесточена'}
         print('Доступный транспорт для производства:')
         prices = []
         for index, n in enumerate(transport_levels[self.factory.team.level]+self.factory.team.advanced_transport, start=1):
@@ -399,14 +489,19 @@ class RocketLauncher(Build):
         super().__init__(factory)
         self.title = 'Ракетная установка'
         self.type = 'Ракетная установка'
-        self.description = 'Ракетная установка'
         self.max_connections_in = 0
         self.max_connections_out = 0
-        self.recipes = [-1]
-        self.price = {'Железный корпус': 15, 'Двигатель': 5, 'Радиопередатчик': 3}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 2
 
     def craft_rocket(self):
+        if self.is_energy_connected==False:
+            return {'success': False, 'error': 'Постройка обесточена'}
         print('Доступные ракеты для производства:')
         prices=[]
         for index, n in enumerate(rocket_level[1], start=1):
@@ -427,6 +522,8 @@ class RocketLauncher(Build):
             return {'success': False, 'error': 'Неверный ввод'}
 
     def launch_rocket(self):
+        if self.is_energy_connected==False:
+            return {'success': False, 'error': 'Постройка обесточена'}
         print('Доступные ракеты:')
         for index, rocket in enumerate(self.factory.team.rockets, start=1):
             print(f'{index}. {rocket}')
@@ -482,11 +579,14 @@ class NuclearReactor(Build):
         super().__init__(factory)
         self.title = 'Ядерный реактор'
         self.type = 'Ядерный реактор'
-        self.description = 'Ядерный реактор'
         self.max_connections_in = 2  # ядерная ячейка + вода
         self.max_connections_out = 1
-        self.recipes = [-1, 100]
-        self.price = {'Железный корпус': 20, 'Бетон': 10, 'Ядерная ячейка': 5, 'Модуль контроля температуры': 5}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 2
 
 
@@ -496,11 +596,14 @@ class DieselGenerator(Build):
         super().__init__(factory)
         self.title = 'Дизельный генератор'
         self.type = 'Дизельный генератор'
-        self.description = 'Дизельный генератор'
         self.max_connections_in = 1
         self.max_connections_out = 1
-        self.recipes = [-1, 99]
-        self.price = {'Железный корпус': 10, 'Мотор': 5, 'Бочка': 3}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 2
 
 class DroidStation(Build):
@@ -508,14 +611,16 @@ class DroidStation(Build):
         super().__init__(factory)
         self.title = 'Станция дроидов'
         self.type = 'Станция дроидов'
-        self.description = 'Станция дроидов'
         self.max_connections_in = 1
         self.max_connections_out = 1
-        self.recipes = [-1]
-        self.price = {'Пластмассовый корпус': 5, 'Аккумулятор': 2}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.mode = 'accept'
         self.profit={}
-        self.current_energy_profit=-10
         self.level = 2
 
     def update_res(self):
@@ -580,11 +685,14 @@ class GasExtractor(Build):
         super().__init__(factory)
         self.title = 'Газовый экстрактор'
         self.type = 'Газовый экстрактор'
-        self.description = 'Газовый экстрактор'
         self.max_connections_in = 0
         self.max_connections_out = 1
-        self.recipes = [-1, 85, 87]
-        self.price = {'Железный корпус': 5, 'Набор труб': 3, 'Мотор': 1}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 2
 
 
@@ -593,11 +701,14 @@ class RadioStation(Build):
         super().__init__(factory)
         self.title = 'Радиостанция'
         self.type = 'Радиостанция'
-        self.description = 'Радиостанция третьего уровня'
         self.max_connections_in = 0
         self.max_connections_out = 0
-        self.recipes = [-1]
-        self.price = {'Железная пластина': 10, 'Медная проволока': 5, 'Процессор': 2, 'Радиопередатчик': 1}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 3
 
 class ParticleAccelerator(Build):
@@ -605,12 +716,14 @@ class ParticleAccelerator(Build):
         super().__init__(factory)
         self.title = 'Ускоритель частиц'
         self.type = 'Ускоритель частиц'
-        self.description = 'Ускоритель частиц'
         self.max_connections_in = 2
         self.max_connections_out = 1
-        self.recipes = [-1, 69, 70, 75, 76]
-        self.price = {'Высокотехнологичная обшивка': 30, 'Сверхпроводящий сплав': 10,
-                      'Ядро ИИ': 5, 'ЭМ стабилизатор плазмы': 5}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 3
 
 class HighTempFurnace(Build):
@@ -618,22 +731,28 @@ class HighTempFurnace(Build):
         super().__init__(factory)
         self.title = 'Высокотемпературная печь'
         self.type = 'Высокотемпературная печь'
-        self.description = 'Высокотемпературная печь'
         self.max_connections_in = 1
         self.max_connections_out = 1
-        self.recipes = [-1, 20]
-        self.price = {'Железный корпус': 20, 'Цемент': 10, 'Иридий': 5}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 3
 class LandingPad(Build):
     def __init__(self, factory=None):
         super().__init__(factory)
         self.title = 'Посадочная площадка'
         self.type = 'Посадочная площадка'
-        self.description = 'Посадочная площадка'
         self.max_connections_in = 0
         self.max_connections_out = 0
-        self.recipes = [-1]
-        self.price = {'Бетон': 25, 'Алюминиевый корпус': 10}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 3
 
 class FusionReactor(Build):
@@ -641,12 +760,14 @@ class FusionReactor(Build):
         super().__init__(factory)
         self.title = 'Термоядерный реактор'
         self.type = 'Термоядерный реактор'
-        self.description = 'Термоядерный реактор'
         self.max_connections_in = 2  # тритий + вода
         self.max_connections_out = 1
-        self.recipes = [-1, 101]
-        self.price = {'Высокотехнологичная обшивка': 40, 'Сверхпроводящий сплав': 10,
-                     'Квантовый чип': 5, 'Тритий': 10}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 3
 
 class ThermalGenerator(Build):
@@ -654,11 +775,14 @@ class ThermalGenerator(Build):
         super().__init__(factory)
         self.title = 'Термальный генератор'
         self.type = 'Термальный генератор'
-        self.description = 'Термальный генератор'
         self.max_connections_in = 0
         self.max_connections_out = 1
-        self.recipes = [-1, 102]
-        self.price = {'Железный корпус': 15, 'Бетон': 10, 'Модуль контроля температуры': 1}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 3
 
 class AdvancedRocketLauncher(Build):
@@ -666,14 +790,19 @@ class AdvancedRocketLauncher(Build):
         super().__init__(factory)
         self.title = 'Улучшенная ракетная установка'
         self.type = 'Улучшенная ракетная установка'
-        self.description = 'Улучшенная ракетная установка'
         self.max_connections_in = 0
         self.max_connections_out = 0
-        self.recipes = [-1]
-        self.price = {'Титановый корпус': 20, 'Реактивный двигатель': 8, 'Контроллер ИИ роя': 5}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 3
 
     def craft_rocket(self):
+        if self.is_energy_connected==False:
+            return {'success': False, 'error': 'Постройка обесточена'}
         print('Доступные ракеты для производства:')
         prices=[]
         for index, n in enumerate(rocket_level[2], start=1):
@@ -694,6 +823,8 @@ class AdvancedRocketLauncher(Build):
             return {'success': False, 'error': 'Неверный ввод'}
 
     def launch_rocket(self):
+        if self.is_energy_connected==False:
+            return {'success': False, 'error': 'Постройка обесточена'}
         print('Доступные ракеты:')
         for index, rocket in enumerate(self.factory.team.rockets, start=1):
             print(f'{index}. {rocket}')
@@ -743,11 +874,14 @@ class ForceFieldGenerator(Build):
         super().__init__(factory)
         self.title = 'Генератор силового поля'
         self.type = 'Генератор силового поля'
-        self.description = 'Генератор силового поля'
         self.max_connections_in = 0
         self.max_connections_out = 0
-        self.recipes = [-1]
-        self.price = {'Высокотехнологичная обшивка': 25, 'ЭМ стабилизатор плазмы': 10, 'Аккумулятор': 5}
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 3
 
 
