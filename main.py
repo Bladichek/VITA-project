@@ -272,7 +272,8 @@ def update_data(current_team='', current_factory=''):
         'device': data.get('device', '')
 
     }
-    with open(f'datas/data{datetime.datetime.now()}.json.back', 'w') as f:
+    timestamp = datetime.datetime.now().isoformat().replace(':', '-')
+    with open(f'datas/data{timestamp}.json.back', 'w') as f:
         json.dump(data, f, indent=4)
     with open('datas/data.json', 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
