@@ -5,7 +5,7 @@ import json
 def from_json(name: str):
     try:
         result={}
-        with open('recipes.json', 'r') as f:
+        with open('recipes.json', 'r', encoding='utf-8') as f:
             data = json.load(f)
             f.close()
         if not name in data.keys():

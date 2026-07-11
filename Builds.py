@@ -443,6 +443,7 @@ class TransportHangar(Build):
         self.defence = builds_data[self.type]['defence']
         self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 2
+        self.recipe_id=0
 
     def craft_transport(self):
         if self.is_energy_connected==False:
@@ -498,6 +499,7 @@ class RocketLauncher(Build):
         self.defence = builds_data[self.type]['defence']
         self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 2
+        self.recipe_id=0
 
     def craft_rocket(self):
         if self.is_energy_connected==False:
@@ -799,6 +801,7 @@ class AdvancedRocketLauncher(Build):
         self.defence = builds_data[self.type]['defence']
         self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 3
+        self.recipe_id=0
 
     def craft_rocket(self):
         if self.is_energy_connected==False:

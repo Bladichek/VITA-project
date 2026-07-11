@@ -522,6 +522,8 @@ def info(current_team: Team, current_factory):
                 print()
             tabs-=1
         for c in cons:
+            if c is None:
+                continue
             if c.input_build.factory.title==current_factory.title and c.input_build.factory.team.title==current_team.title:
                 print(c.info())
         return {'success': True}
@@ -652,9 +654,9 @@ def add_connection(current_factory):
         return {'success': False, 'error': e}
 
 def show_graph(current_factory, args):
-    if current_factory is None:
-        return {'success': False, 'error': 'Не выбрана фабрика'}
-    try:
+    # if current_factory is None:
+    #     return {'success': False, 'error': 'Не выбрана фабрика'}
+    # try:
         if args=='':
             res=_show_simple_graph(current_factory)
         elif args=='health':
@@ -664,8 +666,8 @@ def show_graph(current_factory, args):
         else:
             res = {'success': False, 'error': 'Неверный аргумент'}
         return res
-    except Exception as e:
-        return {'success': False, 'error': e}
+    # except Exception as e:
+    #     return {'success': False, 'error': e}
 
 
 def _show_simple_graph(current_factory):
@@ -701,7 +703,6 @@ def _show_health_graph(current_factory):
             edges.append([b.title, b.connection_out1.output_build.title])
         if b.connection_out2 != None:
             edges.append([b.title, b.connection_out2.output_build.title])
-
     graph = DiGraph()
     for node in nodes:
         graph.add_node(node)
@@ -748,7 +749,7 @@ def _health_to_color(build):
     r=0
     g=0
     if coff==1:
-        return '#0000FF'
+        return '#0000ff'
     elif coff<=0.5:
         r=255
         g=round(coff/0.5*255)
@@ -822,6 +823,8 @@ def set_team_name(current_team, args):
         if args!='':
             if args in team_names:
                 return {'success': False, 'error': 'Команда с таким названием уже есть!'}
+            team_names.remove(current_team.title)
+            team_names.append(args)
             current_team.title=args
             update_data()
             return {'success': True}
@@ -837,7 +840,10 @@ def set_factory_name(current_factory, args):
         if args!='':
             if args in current_factory.team.factories_names:
                 return {'success': False, 'error': 'Фабрика с таким названием уже есть!'}
+            current_factory.team.factories_names.remove(current_factory.title)
+            current_factory.team.factories_names.append(args)
             current_factory.title=args
+
             update_data()
             return {'success': True}
         else:
@@ -1005,7 +1011,7 @@ def add_player(current_team, args):#5678
             s=1
             players=[]
             for k, v in current_team.players.items():
-                print(f'{s}. {v["name"]}')
+                print(f'{s}. {v["nickname"]}')
                 players.append(v['id'])
             print('Введите номер колониста:')
             n=input('Номер:' )
@@ -1850,7 +1856,7 @@ def main():
     global current_factory, current_team, current_player
 
     while True:
-        try:
+        # try:
             text = input('> ').strip()
             if text == '':
                 continue
@@ -2179,8 +2185,8 @@ def main():
                     print('Успешно!')
                 else:
                     print(f'Произошла ошибка! {res["error"]}')
-        except Exception as e:
-            print(f'ПРОИЗОШЛА ОШИБКА! error: {e}')
+        # except Exception as e:
+        #     print(f'ПРОИЗОШЛА ОШИБКА! error: {e}')
 
 
 main()

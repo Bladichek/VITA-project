@@ -210,6 +210,7 @@ class Team:
                 for b in fac.builds:
                     b.set_recipe(b.recipe_id)
                 self.update_energy()
+                self.update_drin_res()
     def update_droids(self):
         old_profit = self.droids_profit.copy()
         self.droids_profit = {}
@@ -364,7 +365,6 @@ class Factory:
         damaged_builds=[]
         destroyed_builds=[]
         count=random.normal(len(self.builds)/2, difficulty/10)
-        print('count', count)
         count=min(len(self.builds), abs(count))
 
         factory_protect=0
@@ -375,7 +375,6 @@ class Factory:
             while (build in [x[0] for x in destroyed_builds]) or (build in [x[0] for x in damaged_builds]):
                 build = choice(self.builds)
             local_difficulty=round(random.normal(difficulty, (difficulty**1.5)/10)*(1-erf(factory_protect/100)))
-            print('local_diff', local_difficulty)
             build.health=max(build.health-local_difficulty, 0)
             if build.health == 0:
                 self.destroy_build(build)
@@ -430,7 +429,6 @@ class Factory:
         if r['success']:
 
             for k, v in build.fix_price().items():
-                print(k, v)
                 self.team.resources[k] -= v
             build.fix()
             return {'success': True}
@@ -652,20 +650,20 @@ class Connection:
         output_build=self.output_build
         for i in [self.input_build, self.output_build]:
             if i is None:
-                print(1)
+
                 continue
             if i.connection_in1==self:
                 i.connection_in1=None
-                print(2)
+
             if i.connection_in2==self:
                 i.connection_in2=None
-                print(3)
+
             if i.connection_out1==self:
                 i.connection_out1=None
-                print(4)
+
             if i.connection_out2==self:
                 i.connection_out2=None
-                print(5)
+
 
         self.res = {}
 
