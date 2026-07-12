@@ -142,6 +142,7 @@ class AnimalRepeller(Build):
         self.defence = builds_data[self.type]['defence']
         self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level=2
+        self.recipe_id=0
 
 class Lumberjack(Build):
     def __init__(self, factory=None):
@@ -185,6 +186,7 @@ class Storage(Build):
         self.destroy_price = builds_data[self.type]['destroy_price']
         self.defence = builds_data[self.type]['defence']
         self.default_energy_profit = builds_data[self.type]['default_energy_profit']
+        self.recipe_id=0
 
     def update_res(self):
         if self.connection_in1 is not None:
@@ -368,6 +370,7 @@ class RadioTower_II(Build):
         self.defence = builds_data[self.type]['defence']
         self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 2
+        self.recipe_id=0
 
 class Turret(Build):
     def __init__(self, factory=None):
@@ -383,6 +386,7 @@ class Turret(Build):
         self.defence = builds_data[self.type]['defence']
         self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 2
+        self.recipe_id=0
 
 class Spotlight(Build):
     def __init__(self, factory=None):
@@ -398,6 +402,7 @@ class Spotlight(Build):
         self.defence = builds_data[self.type]['defence']
         self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 2
+        self.recipe_id=0
 
 class PlasmaTurret(Build):
     def __init__(self, factory=None):
@@ -413,6 +418,7 @@ class PlasmaTurret(Build):
         self.defence = builds_data[self.type]['defence']
         self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 2
+        self.recipe_id=0
 
 class Railgun(Build):
     def __init__(self, factory=None):
@@ -428,6 +434,7 @@ class Railgun(Build):
         self.defence = builds_data[self.type]['defence']
         self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 2
+        self.recipe_id=0
 
 class TransportHangar(Build):
     def __init__(self, factory=None):
@@ -622,6 +629,7 @@ class DroidStation(Build):
         self.defence = builds_data[self.type]['defence']
         self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.mode = 'accept'
+        self.recipe_id=0
         self.profit={}
         self.level = 2
 
@@ -712,6 +720,7 @@ class RadioStation(Build):
         self.defence = builds_data[self.type]['defence']
         self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 3
+        self.recipe_id=0
 
 class ParticleAccelerator(Build):
     def __init__(self, factory=None):
@@ -756,6 +765,7 @@ class LandingPad(Build):
         self.defence = builds_data[self.type]['defence']
         self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 3
+        self.recipe_id=0
 
 class FusionReactor(Build):
     def __init__(self, factory=None):
@@ -886,6 +896,7 @@ class ForceFieldGenerator(Build):
         self.defence = builds_data[self.type]['defence']
         self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.level = 3
+        self.recipe_id=0
 
 
 builds = [

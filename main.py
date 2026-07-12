@@ -696,21 +696,24 @@ def _show_simple_graph(current_factory):
 def _show_health_graph(current_factory):
     nodes = []
     edges = []
-    colors=[]
+    colors = []
+    labels = {}
     for b in current_factory.builds:
-        nodes.append(f'{b.title} ({b.health}/{b.max_health})')
+        nodes.append(b.title)
+        labels[b.title] = f'{b.title} ({b.health}/{b.max_health})'
         colors.append(_health_to_color(b))
-        if b.connection_out1 != None:
+        if b.connection_out1 is not None:
             edges.append([b.title, b.connection_out1.output_build.title])
-        if b.connection_out2 != None:
+        if b.connection_out2 is not None:
             edges.append([b.title, b.connection_out2.output_build.title])
-    graph = DiGraph()
+
+    graph = DiGraph(directrd=True)
     for node in nodes:
         graph.add_node(node)
     for edge in edges:
         graph.add_edge(edge[0], edge[1])
 
-    draw(graph, with_labels=True, node_color=colors)
+    draw(graph, with_labels=True, labels=labels, node_color=colors)
     show()
     return {'success': True}
 
@@ -1014,8 +1017,9 @@ def add_player(current_team, args):#5678
             for k, v in current_team.players.items():
                 print(f'{s}. {v["nickname"]}')
                 players.append(v['id'])
+                s+=1
             print('Введите номер колониста:')
-            n=input('Номер:' )
+            n=input('Номер: ' )
             if not (n.isdigit() and int(n)>0 and int(n)<=len(players)):
                 return {'success': False, 'error': 'Неверный ввод'}
             player=players[int(n)-1]
@@ -1240,7 +1244,7 @@ def add_balance(current_team, player):
         return {'success': False, 'error': 'Не выбран колонист'}
     try:
         n=input('На сколько?: ')
-        if not n.isdigit():
+        if not (n.isdigit() or (n[0]=='-' and n[1:].isdigit())):
             return {'success': False, 'error': 'Неверный ввод'}
         player['balance']+=int(n)
         update_data()
@@ -1703,7 +1707,10 @@ def read_serial():
     port=data.get('device', '')
     if port=='':
         return {'success': False, 'error': 'RFID не подключен!'}
-    ser = serial.Serial(port=port, baudrate=9600, timeout=1)
+    try:
+        ser = serial.Serial(port=port, baudrate=9600, timeout=1)
+    except:
+        return {'success': False, 'error': 'RFID не подключен или не выбран нужный порт!'}
     text = ''
     n=1
     while text == '' and n<=10:
@@ -1923,7 +1930,7 @@ def main():
             elif command=='/build':
                 res=build(current_factory=current_factory)
                 if res['success']:
-                    pass
+                    print('Успешно!')
                 else:
                     print(f'Произошла ошибка! {res["error"]}')
 

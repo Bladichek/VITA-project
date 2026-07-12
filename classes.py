@@ -108,8 +108,10 @@ class Team:
             rec.append(v)
             s+=1
 
-        n=int(input('Введите номер крафта: '))
-        cur_craft = rec[n-1]
+        n=input('Введите номер крафта: ')
+        if not (n.isdigit() and int(n)>0 and int(n)<=len(rec)):
+            return {'success': False, 'error': 'Неверный ввод'}
+        cur_craft = rec[int(n)-1]
 
         price = cur_craft['resources']
         f = True
