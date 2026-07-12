@@ -417,7 +417,7 @@ class PlasmaTurret(Build):
         self.destroy_price = builds_data[self.type]['destroy_price']
         self.defence = builds_data[self.type]['defence']
         self.default_energy_profit = builds_data[self.type]['default_energy_profit']
-        self.level = 2
+        self.level = 3
         self.recipe_id=0
 
 class Railgun(Build):
