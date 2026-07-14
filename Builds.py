@@ -188,7 +188,7 @@ class Storage(Build):
         self.default_energy_profit = builds_data[self.type]['default_energy_profit']
         self.recipe_id=0
 
-    def update_res(self):
+    def update_res(self, visited=None):
         if self.connection_in1 is not None:
             self.out=self.connection_in1.res.copy()
         else:
@@ -633,7 +633,10 @@ class DroidStation(Build):
         self.profit={}
         self.level = 2
 
-    def update_res(self):
+    def update_res(self, visited=None):
+        if visited is None: visited = set()
+        if id(self) in visited: return
+        visited.add(id(self))
         if self.mode=='accept':
             if self.connection_in1 is not None:
                 self.profit=self.connection_in1.res
@@ -653,18 +656,18 @@ class DroidStation(Build):
                     else:
                         print(f'Недостаточно ресурсов на станции дроидов {self.title} фабрики {self.factory.title}! Производство остановлено')
                         self.is_energy_connected=False
-                        return self.update_res()
+                        return self.update_res(visited)
                 else:
                     if self.factory.team.droids_profit.get(k, 0)-self.profit.get(k, 0)>=0:
                         print('Подача ресурсов восстановлена!')
                         self.is_energy_connected=True
-                        return self.update_res()
+                        return self.update_res(visited)
                     else:
                         self.out={'output1': {}, 'output2': {} }
 
             if self.connection_out1 is not None:
                 self.connection_out1.add_res()
-                self.connection_out1.output_build.update_res()
+                self.connection_out1.output_build.update_res(visited)
         self.factory.team.update_droids()
 
     def set_recipe(self, recipe_id):
@@ -902,6 +905,21 @@ class ForceFieldGenerator(Build):
         self.level = 3
         self.recipe_id=0
 
+class BigRadar(Build):
+    def __init__(self, factory=None):
+        super().__init__(factory)
+        self.title = 'R2114'
+        self.type = 'K111212'
+        self.max_connections_in = 0
+        self.max_connections_out = 0
+        self.description = builds_data[self.type]['description']
+        self.recipes = builds_data[self.type]['recipes']
+        self.price = builds_data[self.type]['price']
+        self.destroy_price = builds_data[self.type]['destroy_price']
+        self.defence = builds_data[self.type]['defence']
+        self.default_energy_profit = builds_data[self.type]['default_energy_profit']
+        self.level = 5
+        self.recipe_id=0
 
 builds = [
     Node,
@@ -948,4 +966,5 @@ builds = [
     ThermalGenerator,
     AdvancedRocketLauncher,
     ForceFieldGenerator,
+    BigRadar
 ]

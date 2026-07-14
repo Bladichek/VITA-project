@@ -29,7 +29,7 @@ class World:
 
     def update_day(self):
         result={}
-        self.day+=1
+
         for team in self.teams:
             res=team.hit(difficulty=self.difficulty)
             if res['success']:
@@ -39,8 +39,9 @@ class World:
             for k, v in team.produce.items():
                 if k=='energy':
                     continue
-                team.resources[k]=team.resources.get(k, 0)+v
+                team.resources[k]=round(team.resources.get(k, 0)+v)
             team.update_drin_res()
+        self.day += 1
         return {'success': True, 'result': result}
 
 
@@ -162,6 +163,7 @@ class Team:
                 return {'success': False, 'error': ' Нельзя купить один и тот же чертёж больше 1 раза!'}
             else:
                 player['advanced_recipes'].append(item[1]['item'])
+                player['balance'] -= item[1]['price']
                 return {'success': True}
 
 
@@ -375,7 +377,7 @@ class Factory:
         factory_protect=0
         for b in self.builds:
             factory_protect+=b.defence*b.is_energy_connected
-        for i in count:
+        for i in range(count):
             build=choice(self.builds)
             while (build in [x[0] for x in destroyed_builds]) or (build in [x[0] for x in damaged_builds]):
                 build = choice(self.builds)
@@ -424,7 +426,7 @@ class Factory:
             for b in self.builds:
                 b.fix()
             for k, v in all_res.items():
-                self.team.resources[k]-=v
+                self.team.resources[k] = self.team.resources.get(k, 0) - v
             return {'success': True}
         else:
             return {'success': False, 'result': f'Не хватает ресурсов: {r["ost"]}'}
@@ -548,7 +550,10 @@ class Build:
         self.recipe_id=recipe_id
         self.update_res()
 
-    def update_res(self):
+    def update_res(self, visited=None):
+        if visited is None: visited = set()
+        if id(self) in visited: return
+        visited.add(id(self))
         self.description = builds_data[self.type]['description']
         self.recipes = builds_data[self.type]['recipes']
         self.price = builds_data[self.type]['price']
@@ -575,7 +580,7 @@ class Build:
                         if con is not None:
                             con.add_res()
                             if con.output_build is not None:
-                                con.output_build.update_res()
+                                con.output_build.update_res(visited)
                     return False
                 elif cur_res < v:
                     coff.append(cur_res / v)
@@ -595,7 +600,7 @@ class Build:
                         if con is not None:
                             con.add_res()
                             if con.output_build is not None:
-                                con.output_build.update_res()
+                                con.output_build.update_res(visited)
                     return False
                 elif cur_res < v:
                     coff.append(cur_res / v)
@@ -622,9 +627,9 @@ class Build:
 
 
         if self.connection_out1 is not None:
-            self.connection_out1.output_build.update_res()
+            self.connection_out1.output_build.update_res(visited)
         if self.connection_out2 is not None:
-            self.connection_out2.output_build.update_res()
+            self.connection_out2.output_build.update_res(visited)
 
 
     def fix_price(self):
@@ -686,6 +691,7 @@ class Connection:
 
 
     def add_res(self):
+        if self.input_build is None: self.res = {}; return
         if self.input_build.connection_out1 == self:
             res = self.input_build.out['output1']
         else:
@@ -720,7 +726,10 @@ class Node(Build):
         self.recipe_id=-1
         self.recipes=[-1]
 
-    def update_res(self):
+    def update_res(self, visited=None):
+        if visited is None: visited = set()
+        if id(self) in visited: return
+        visited.add(id(self))
         input_res={}
         if self.connection_in1 is not None:
             input_res = self.connection_in1.res.copy()
@@ -734,6 +743,7 @@ class Node(Build):
         if input_res:
             if len(input_res.keys())>1:
                 print('На вход подаются разные типы ресурсов!')
+                self.out={'output1': {}, 'output2': {}}
                 return False
             key, amount = list(input_res.keys())[0], list(input_res.values())[0]
 
@@ -752,9 +762,9 @@ class Node(Build):
                 con.add_res()
 
         if self.connection_out1 is not None:
-            self.connection_out1.output_build.update_res()
+            self.connection_out1.output_build.update_res(visited)
         if self.connection_out2 is not None:
-            self.connection_out2.output_build.update_res()
+            self.connection_out2.output_build.update_res(visited)
 
     def set_recipe(self, recepie_id):
         self.update_res()
@@ -814,7 +824,7 @@ def compare_resources(price, current):
     f = True
     ost = {}
     for k, v in price.items():
-        if current.get(k, 0) < v:
+        if current.get(k, 0) <= v:
             f = False
             ost[k] = v - current.get(k, 0)
     if f == False:

@@ -46,6 +46,7 @@ def load_data():
                 team.launched_rockets = value.get('launched_rockets')
                 team.transport = value.get('transport')
                 team.advanced_transport = value.get('advanced_transport')
+                team.grabbed_resources = {int(k): v for k, v in value.get('grabbed_resources', {}).items()}
                 cur_players = {}
                 for k, v in value.get('players', {}).items():
                     cur_players[int(k)] = v
@@ -322,6 +323,8 @@ def set_current_team():
         n+=1
     try:
         t = int(input('Введите номер команды: '))
+        if t<=0:
+            return {'success': False, 'error': 'Введён неверный номер'}
         tm=teams[t-1]
         update_data(current_team=tm.title)
         print('Команда успешно выбрана!')
@@ -607,8 +610,9 @@ def add_connection(current_factory):
             else:
                 return {'success': False, 'error': 'Введён неверный порт'}
             port1=port
+
         else:
-            build_in.add_connection_out(c)
+            r=build_in.add_connection_out(c)
         if r is not None:
             if r==False:
                 c.remove_connection()
@@ -1174,7 +1178,7 @@ def set_drin(current_team):
         return {'success': False, 'error': 'Не выбрана команда'}
     try:
         drin = input(f'Введите значение ДРИН в % от 1 до 100 (текущее значение: {current_team.drin}) ')
-        if not (int(drin)<=100 and int(drin)>0):
+        if not (int(drin)<=100 and int(drin)>=0):
             return {'success': False, 'error': 'Неверный ввод'}
         current_team.drin = int(drin)
         res=current_team.update_drin_res()
@@ -1844,7 +1848,7 @@ def set_level(current_team):
 
     try:
         n=input(f'Введите уровень (1-3), текущий уровень: {current_team.level}: ')
-        if n in ['1', '2', '3']:
+        if n in ['1', '2', '3', '5']:
             current_team.level=int(n)
             update_data()
             return {'success': True}
