@@ -366,17 +366,20 @@ class Factory:
     def hit(self, difficulty):
         damaged_builds=[]
         destroyed_builds=[]
-        count=random.normal(len(self.builds)/2, difficulty/10)
-        count=min(len(self.builds), abs(count))
+        c=input('Бросьте кубик д6 на количество повреждённых построек: ')
+        while not(c.isdigit() and int(c)>0 and int(c)<=6):
+            c = input('Бросьте кубик д6 на количество повреждённых построек: ')
+
+        count=round(len(self.builds)*int(c)/6)
 
         factory_protect=0
         for b in self.builds:
             factory_protect+=b.defence*b.is_energy_connected
-        for i in range(round(count)):
+        for i in count:
             build=choice(self.builds)
             while (build in [x[0] for x in destroyed_builds]) or (build in [x[0] for x in damaged_builds]):
                 build = choice(self.builds)
-            local_difficulty=round(random.normal(difficulty, (difficulty**1.5)/10)*(1-erf(factory_protect/100)))
+            local_difficulty=round(random.normal(difficulty**1.5, (difficulty**1.5)/10)*(1-erf(factory_protect/100)))
             build.health=max(build.health-local_difficulty, 0)
             if build.health == 0:
                 self.destroy_build(build)

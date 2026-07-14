@@ -331,7 +331,7 @@ class Foundry(Build):
         super().__init__(factory)
         self.title = 'Литейная'
         self.type = 'Литейная'
-        self.max_connections_in = 2
+        self.max_connections_in = 1
         self.max_connections_out = 1
         self.description = builds_data[self.type]['description']
         self.recipes = builds_data[self.type]['recipes']
@@ -641,17 +641,21 @@ class DroidStation(Build):
                 self.profit={}
         else:
             if self.profit != {}:
+                if self.factory.team.is_energy_active==False:
+                    self.out = {'output1': {}, 'output2': {}}
+                    self.factory.team.update_droids()
+                    return None
                 k = list(self.profit.keys())[0]
                 if self.is_energy_connected:
 
-                    if self.factory.team.droids_profit[k]>=0:
+                    if self.factory.team.droids_profit.get(k,0)>=0:
                         self.out={'output1': self.profit, 'output2': {}}
                     else:
                         print(f'Недостаточно ресурсов на станции дроидов {self.title} фабрики {self.factory.title}! Производство остановлено')
                         self.is_energy_connected=False
                         return self.update_res()
                 else:
-                    if self.factory.team.droids_profit[k]-self.profit[k]>=0:
+                    if self.factory.team.droids_profit.get(k, 0)-self.profit.get(k, 0)>=0:
                         print('Подача ресурсов восстановлена!')
                         self.is_energy_connected=True
                         return self.update_res()

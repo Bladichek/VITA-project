@@ -109,7 +109,7 @@ def load_data():
                                 b.add_connection_out(c, port2)
                             elif b.title == output_build_name:
                                 b.add_connection_in(c, port1)
-                    team.update()
+                    #team.update()
                     cur_team = data.get('current_team')
                     cur_factory = data.get('current_factory')
                     if cur_factory and cur_team and factory.title == cur_factory and team.title == cur_team:
@@ -118,7 +118,7 @@ def load_data():
                     current_team = team
 
 
-
+                team.update()
                 world.teams.append(team)
 
 
@@ -995,7 +995,7 @@ def add_player(current_team, args):#5678
             else:
                 card_id='no'
             for k, v in current_team.players.items():
-                if v['card_id']==card_id:
+                if v['card_id']==card_id and card_id!='no':
                     return {'success': False, 'error': 'Эта карта уже есть в базе!'}
 
             player={
@@ -1864,7 +1864,7 @@ def main():
     global current_factory, current_team, current_player
 
     while True:
-        # try:
+        try:
             text = input('> ').strip()
             if text == '':
                 continue
@@ -2193,8 +2193,8 @@ def main():
                     print('Успешно!')
                 else:
                     print(f'Произошла ошибка! {res["error"]}')
-        # except Exception as e:
-        #     print(f'ПРОИЗОШЛА ОШИБКА! error: {e}')
+        except Exception as e:
+            print(f'ПРОИЗОШЛА ОШИБКА! error: {e}')
 
 
 main()
